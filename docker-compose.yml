@@ -10,7 +10,7 @@ services:
     restart: always
     volumes:
       - ./cache:/mf-video/cache
-      - ./data://mf-video/app/data
+      - ./data://mf-video/data
       - mf_video_shared:/app/mf-video
     environment:
       - DATA_DIR=${DATA_DIR}

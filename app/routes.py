@@ -29,11 +29,11 @@ def register():
     email = form.get('email', '')
     password = form.get('password', '')
     pm = PostgresManager()
-    user = pm.create_user(username, name, surname, email, generate_hash(password))
-
+    user_data, _ = pm.create_user(username, name, surname, email, generate_hash(password))
+    user = user_data.get("data", {})
     return jsonify({
         "status": "User created succesfully",
-        "message": user.to_dict()}, 200)
+        "message": user}, 200)
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -46,14 +46,18 @@ def login():
     user_data, _ = pm.read_user_by_username(username)
 
     user = user_data.get("data", {})
+    print(f"User: {user}")
 
     if not user.get('username', '') or not check_hash(password, user.get('password', '')):
+        print(f"username: {user.get('username', '') }")
+        print(f"password: {user.get('password', '')}")
+        print(f"entered password: {password}")
         return jsonify({
             "status": "ERROR",
             "message": "Invalid username or password"
         }, 401)
 
-    login_user(user, remember=True)
+    # login_user(user, remember=True)
     return jsonify({
         "status": "OK",
         "message": f"User {user.get('username', '')} logged in"

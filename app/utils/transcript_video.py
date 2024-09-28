@@ -13,4 +13,4 @@ class TranscriptVideo:
     def transcript_video(self, customer_id, session, action):
         with app.app_context():
             print(f"Transcripting video for customer {customer_id} and session {session} using {action}")
-        return jsonify({"status": "OK", "message": "Video is now processing. You can check if result is ready using ready_suffix"})
+        return {"status": "OK", "message": "Video is now processing. You can check if result is ready using ready_suffix"}, 200

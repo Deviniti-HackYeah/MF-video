@@ -9,13 +9,16 @@ class DataManager():
         self.customer_id = customer_id
         self.file = file
         self.file_name = file_name
-        self.language = language       
+        self.language = language    
 
     def save(self):
 
+        print(f" * data dir: {self.data_dir}")
         customer_dir = os.path.join(self.data_dir, str(self.customer_id))
         session = random.randint(1, 999999999)
+        print(f" * Session: {session}")
         session_dir = os.path.join(customer_dir, str(session))
+        print(f" * Session dir: {session_dir}")
 
         if not os.path.exists(customer_dir):
             os.makedirs(customer_dir)

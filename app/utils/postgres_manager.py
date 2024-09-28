@@ -21,7 +21,7 @@ class PostgresManager:
         user = User(username, name, surname, email, password)
         self.db.session.add(user)
         self.db.session.commit()
-        return jsonify({"message": "user created", "data": user.to_dict()}, 200)
+        return {"message": "user created", "data": user.to_dict()}, 200
     
     def read_user(self, user_id):
         """
@@ -29,8 +29,8 @@ class PostgresManager:
         """
         user = User.query.get(user_id)
         if user:
-            return jsonify({"message": "user exist", "data": user.to_dict()}, 200)
-        return jsonify({"message": "user not found", "data": {}}, 404)
+            return {"message": "user exist", "data": user.to_dict()}, 200
+        return {"message": "user not found", "data": {}}, 404
     
     def read_user_by_username(self, username):
         """
@@ -38,8 +38,8 @@ class PostgresManager:
         """
         user = User.query.filter_by(username=username).first()
         if user:
-            return jsonify({"message": "user exist", "data": user.to_dict()}, 200)
-        return jsonify({"message": "user not found", "data": {}}, 404)
+            return {"message": "user exist", "data": user.to_dict()}, 200
+        return {"message": "user not found", "data": {}}, 404
     
     def create_file(self, name, ftype, size, user_id, hash):
         """
@@ -48,5 +48,5 @@ class PostgresManager:
         file = File(name, ftype, size, user_id, hash)
         self.db.session.add(file)
         self.db.session.commit()
-        return jsonify({"message": "file created", "data": file.to_dict()}, 200)
+        return {"message": "file created", "data": file.to_dict()}, 200
     
