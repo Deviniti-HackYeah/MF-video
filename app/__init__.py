@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from config import Config
 import os
 from dotenv import load_dotenv
+import whisper_timestamped as whisper
 
 load_dotenv()
 
@@ -15,6 +16,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.getenv('DB_U
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+whisper_model = whisper.load_model('large')
 
 login_manager = LoginManager()
 login_manager.login_view = 'app.login'

@@ -9,3 +9,8 @@ flask_sqlalchemy
 flask_migrate
 flask_login
 psycopg2
+textstat
+numpy
+scikit-learn
+whisper-timestamped
+pydub
