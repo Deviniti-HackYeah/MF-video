@@ -7,10 +7,12 @@ python-dotenv==1.0.0
 Werkzeug==2.3.6
 flask_sqlalchemy
 flask_migrate
+flask_login
+psycopg2
 textstat
 numpy
 scikit-learn
 whisper-timestamped
 pydub
-python-dotenv
+flask_cors
 librosa
