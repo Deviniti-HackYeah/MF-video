@@ -112,7 +112,7 @@ class TranscriptVideo:
                 print(" * Transcribing audio file" + " (" + str(self.customer_id) + " " + str(self.session) + ")")
                 output = client.audio.transcriptions.create(model = model, file=audio_file , response_format = "srt")
                 return output
-         except Exception as e:
+            except Exception as e:
                 self.logger.error(" *** Error: ", str(e))
                 print("Error: ", str(e))
                 return ""
