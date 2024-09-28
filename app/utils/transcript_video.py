@@ -2,7 +2,7 @@ from flask import jsonify
 import whisper_timestamped as whisper
 from pydub import AudioSegment
 import numpy as np
-from text_analyzer import TextAnalyzer
+from app.utils.text_analyzer import TextAnalyzer
 # from app import whisper_model
 
 class TranscriptVideo:

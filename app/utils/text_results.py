@@ -1,4 +1,4 @@
-from llm_analyzer import LLMAnalyzer
+from app.utils.llm_analyzer import LLMAnalyzer
 
 class TextAnswers:
     def __init__(self):

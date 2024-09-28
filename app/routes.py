@@ -85,11 +85,12 @@ def logout():
 @app.route("/get_users", methods=["GET"])
 @cross_origin()
 def get_users():
-    users = User.query.all()
+    pm = PostgresManager()
+    users_data, _ = pm.read_all_users()
+    users = users_data.get("data", [])
     return jsonify({
         "status": "OK",
-        "message": "Users found",
-        "data": [user.to_dict() for user in users]
+        "message": users
     }, 200)
 
 @app.route("/post_video", methods=["POST"])
