@@ -4,15 +4,16 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from config import Config
 import os
+
 from dotenv import load_dotenv
 import whisper_timestamped as whisper
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
 app.config.from_object(Config)
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_DB')}"
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)

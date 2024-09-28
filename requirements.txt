@@ -14,3 +14,4 @@ numpy
 scikit-learn
 whisper-timestamped
 pydub
+flask_cors
