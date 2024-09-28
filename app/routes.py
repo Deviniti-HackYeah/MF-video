@@ -43,9 +43,11 @@ def login():
     password = form.get('password', '')
 
     pm = PostgresManager()
-    user = pm.read_user_by_username(username)
+    user_data, _ = pm.read_user_by_username(username)
 
-    if not user or not check_hash(password, user.password):
+    user = user_data.get("data", {})
+
+    if not user.get('username', '') or not check_hash(password, user.get('password', '')):
         return jsonify({
             "status": "ERROR",
             "message": "Invalid username or password"
@@ -54,7 +56,7 @@ def login():
     login_user(user, remember=True)
     return jsonify({
         "status": "OK",
-        "message": f"User {user.username} logged in"
+        "message": f"User {user.get('username', '')} logged in"
     }, 200)
 
 @app.route("/logout")

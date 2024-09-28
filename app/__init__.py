@@ -11,7 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 
 app.config.from_object(Config)
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_DB')}"
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
