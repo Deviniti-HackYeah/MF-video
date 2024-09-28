@@ -1,6 +1,7 @@
 import os
 import json
 import random
+
 class DataManager():
 
     def __init__(self, customer_id, language, file_name, file):

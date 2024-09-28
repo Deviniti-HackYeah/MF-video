@@ -18,7 +18,6 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     files = db.relationship('File', back_populates='user', cascade="all, delete")
-    analysis = db.relationship('Analysis', back_populates='user', cascade="all, delete")
 
     def __init__(self, username, name, surname, email, password):
         self.username = username
@@ -56,6 +55,8 @@ class File(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     user = db.relationship('User', back_populates='files')
 
+    analysis = db.relationship('Analysis', back_populates='file', cascade="all, delete")
+
     def __init__(
             self, name, ftype, size, user_id, hash
             ):
@@ -83,13 +84,13 @@ class File(db.Model):
 class Analysis(db.Model):
     __tablename__ = 'analysis'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('file.id'), nullable=True)
 
-    def __init__(self, user_id):
-        self.user_id = user_id
+    def __init__(self, file_id):
+        self.file_id = file_id
 
     def to_dict(self):
         return {
             "id": self.id,
-            "user_id": self.user_id
+            "file_id": self.file_id
         }
