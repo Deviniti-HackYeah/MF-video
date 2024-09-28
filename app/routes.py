@@ -6,7 +6,6 @@ import os
 from app import app
 from flask import redirect, render_template, url_for
 from flask_cors import cross_origin
-from flask_login import current_user, login_user, logout_user, login_required
 
 from app.utils.api_helper import post_video_action, result_ready, get_file_path, send_mail_ok
 from app.utils.functions import generate_hash, check_hash
@@ -23,7 +22,6 @@ def add_headers(response):
     return response
 
 @app.route("/", methods=["GET", "OPTIONS"])
-@cross_origin()
 @cross_origin()
 def home():
     return add_headers(jsonify({"message": "Hello, World!"}))
@@ -75,10 +73,9 @@ def login():
     }, 200)
 
 @app.route("/logout")
-@login_required
 @cross_origin()
 def logout():
-    logout_user()
+    # logout_user()
     return jsonify({
         "status": "OK",
         "message": "User logged out"
