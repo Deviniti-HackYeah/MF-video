@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from config import Config
 import os
 from dotenv import load_dotenv
-import whisper
+import whisper_timestamped as whisper
 
 load_dotenv()
 
