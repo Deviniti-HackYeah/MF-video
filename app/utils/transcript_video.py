@@ -213,6 +213,16 @@ class TranscriptVideo:
     
     
     def get_full_text_from_words(self, word_dict: list[dict]) -> str:
+        """
+        This function filters out words containing "*" from a list of dictionaries and returns a list of
+        the remaining words.
+        
+        :param word_dict: A list of dictionaries where each dictionary represents a word. Each
+        dictionary has a key 'text' which contains the text of the word. The function
+        `get_full_text_from_words` iterates through this list and appends the 'text' value of each
+        dictionary to `full_text_list` if the
+        :type word_dict: list[dict]
+        """
         full_text_list = []
         for w in word_dict:
             if "*" not in w['text']:
@@ -225,10 +235,34 @@ class TranscriptVideo:
     
     
     def word_count(self, word_dict: list[dict]) -> int:
+        """
+        The function `word_count` returns the length of a list of dictionaries representing word counts.
+        
+        :param word_dict: The `word_dict` parameter in the `word_count` function is a list of
+        dictionaries. Each dictionary in the list likely represents a word and its corresponding count
+        or some other related information. The function simply returns the length of the `word_dict`
+        list, which would give the number of dictionaries (
+        :type word_dict: list[dict]
+        :return: the length of the list `word_dict`, which represents the number of dictionaries in the
+        list.
+        """
         return len(word_dict)
     
     
     def text_stats(self, word_dict: dict) -> dict:
+        """
+        The `text_stats` function calculates various statistics such as total talking time, number of
+        pauses, word count, words per second, and readability metrics for a given text.
+        
+        :param word_dict: The `text_stats` method you provided seems to be a part of a class and it
+        calculates various statistics based on the input `word_dict`. The `word_dict` parameter likely
+        contains information about words spoken or written during a specific text or speech
+        :type word_dict: dict
+        :return: The `text_stats` method returns a dictionary containing various statistics related to
+        the input text data. The dictionary includes information such as total talking time, number of
+        pauses, total pause time, word count, words per second, and readability metrics like Gunning Fog
+        index, Flesch Reading Ease score, Flesch-Kincaid Grade Level, and Dale-Chall readability score.
+        """
         
         # Total talking time
         total_talking_time = self.total_talking_time(word_dict)
@@ -262,11 +296,8 @@ class TranscriptVideo:
                     'dale_chall_readibility_score': dale_chall
                 }
         }
-        
-        print(stats)
-        
-        
-    def run_analysis
+             
+        return stats
     
     
 tv = TranscriptVideo()

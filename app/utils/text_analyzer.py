@@ -25,6 +25,17 @@ class TextAnalyzer:
     
     
     def readibility(self, text: str) -> tuple[float, float, float]:
+        """
+        This Python function calculates readability scores for a given text using the Flesch Reading
+        Ease, Flesch-Kincaid Grade Level, and Dale-Chall Readability formulas.
+        
+        :param text: The code snippet you provided is a function named `readibility` that takes a string
+        input `text` and calculates three readability scores using the `textstat` library: Flesch
+        Reading Ease, Flesch-Kincaid Grade Level, and Dale-Chall Readability Score. The function
+        :type text: str
+        :return: The function `readibility` is returning a tuple containing three float values:
+        `reading_ease`, `grade`, and `dale_chall`.
+        """
         reading_ease = textstat.flesch_reading_ease(text)
         grade = textstat.flesch_kincaid_grade(text)    
         dale_chall = textstat.dale_chall_readability_score(text)
