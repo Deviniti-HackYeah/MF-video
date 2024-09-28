@@ -11,6 +11,8 @@ from app.utils.api_helper import post_video_action, result_ready, get_file_path,
 from app.utils.functions import generate_hash, check_hash
 from app.utils.postgres_manager import PostgresManager
 
+from app.models import User
+
 app = Blueprint('app', __name__)
 
 data_dir = os.environ.get('DATA_DIR')
@@ -47,9 +49,13 @@ def login():
     password = form.get('password', '')
 
     pm = PostgresManager()
+
     user_data, _ = pm.read_user_by_username(username)
+    print(f"user_data: {user_data}")
 
     user = user_data.get("data", {})
+
+    print(f"Looking for user: {username}")
     print(f"User: {user}")
 
     if not user.get('username', '') or not check_hash(password, user.get('password', '')):
@@ -74,6 +80,16 @@ def logout():
     return jsonify({
         "status": "OK",
         "message": "User logged out"
+    }, 200)
+
+@app.route("/get_users", methods=["GET"])
+@cross_origin()
+def get_users():
+    users = User.query.all()
+    return jsonify({
+        "status": "OK",
+        "message": "Users found",
+        "data": [user.to_dict() for user in users]
     }, 200)
 
 @app.route("/post_video", methods=["POST"])
