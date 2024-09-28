@@ -42,17 +42,20 @@ class File(db.Model):
     ftype = db.Column(db.String(100), nullable=True)
     size = db.Column(db.Integer, nullable=False)  # Dodano atrybut size
     progress = db.Column(db.Float, default=0.0)  # Zmieniono na db.Float
+    session = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     processed = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
     user = db.relationship('User', back_populates='files')
 
     analysis = db.relationship('Analysis', back_populates='file', cascade="all, delete")
 
-    def __init__(self, name, ftype, size, user_id, hash):
+    def __init__(self, name, ftype, size, session, user_id, hash):
         self.name = name
         self.ftype = ftype
         self.size = size
+        self.session = session
         self.user_id = user_id
         self.hash = hash
 
@@ -65,6 +68,7 @@ class File(db.Model):
             "created_at": self.created_at.strftime("%d.%m.%Y") if self.created_at else None,
             "progress": self.progress,
             "processed": self.processed,
+            "session": self.session,
             "file": self.size,
             "user_id": self.user_id
         }

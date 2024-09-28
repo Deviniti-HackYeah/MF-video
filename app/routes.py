@@ -5,6 +5,7 @@ from flask import (Flask, Response, jsonify, redirect, render_template, request,
 import os
 from app import app
 from flask import redirect, render_template, url_for
+from flask_cors import cross_origin
 from flask_login import current_user, login_user, logout_user, login_required
 
 from app.utils.api_helper import post_video_action, result_ready, get_file_path, send_mail_ok
@@ -15,11 +16,20 @@ app = Blueprint('app', __name__)
 
 data_dir = os.environ.get('DATA_DIR')
 
-@app.route("/", methods=["GET"])
+def add_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
+
+@app.route("/", methods=["GET", "OPTIONS"])
+@cross_origin()
+@cross_origin()
 def home():
-    return jsonify({"message": "Hello, World!"})
+    return add_headers(jsonify({"message": "Hello, World!"}))
 
 @app.route("/register", methods=["POST"])
+@cross_origin()
 def register():
     form = request.form
 
@@ -36,6 +46,7 @@ def register():
         "message": user}, 200)
 
 @app.route("/login", methods=['GET', 'POST'])
+@cross_origin()
 def login():
     form = request.form
 
@@ -65,6 +76,7 @@ def login():
 
 @app.route("/logout")
 @login_required
+@cross_origin()
 def logout():
     logout_user()
     return jsonify({
@@ -73,16 +85,19 @@ def logout():
     }, 200)
 
 @app.route("/post_video", methods=["POST"])
+@cross_origin()
 def post_video():
     result = post_video_action(request)
-    return result
+    return jsonify(result)
 
 @app.route("/result_ready/<customer_id>/<session>", methods=["GET"])
+@cross_origin()
 def result_ready(customer_id, session):
     result_ready = result_ready(customer_id, session)
-    return result_ready
+    return jsonify(result_ready)
 
 @app.route("/download/<customer_id>/<session>", methods=["GET"])
+@cross_origin()
 def get_result(customer_id, session):
     if result_ready(customer_id, session):
         folder_path = os.path.join(data_dir, str(customer_id), str(session))
@@ -96,6 +111,7 @@ def get_result(customer_id, session):
         "ready_suffix": f"/api/result_ready/{customer_id}/{session}"}), 403
     
 @app.route("/send_email/<customer_id>/<session>", methods=["POST"])
+@cross_origin()
 def send_mail(customer_id, session):
     params = {
         "customer_id": customer_id,
@@ -107,6 +123,7 @@ def send_mail(customer_id, session):
     return jsonify(resp), 200
     
 @app.route("/delete_reuslts/<customer_id>/<session>", methods=["GET"])
+@cross_origin()
 def delete_results(customer_id, session):
     print(f"customer id: {customer_id}, session id: {session}")
     deleted = delete_results(customer_id, session)

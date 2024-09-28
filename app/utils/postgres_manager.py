@@ -41,11 +41,11 @@ class PostgresManager:
             return {"message": "user exist", "data": user.to_dict()}, 200
         return {"message": "user not found", "data": {}}, 404
     
-    def create_file(self, name, ftype, size, user_id, hash):
+    def create_file(self, name, ftype, size, session, user_id, hash):
         """
         Create a new file in the database.
         """
-        file = File(name, ftype, size, user_id, hash)
+        file = File(name, ftype, size, session, user_id, hash)
         self.db.session.add(file)
         self.db.session.commit()
         return {"message": "file created", "data": file.to_dict()}, 200

@@ -2,7 +2,6 @@
 from threading import Thread
 from app import app
 
-from flask import jsonify
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -15,7 +14,7 @@ from app.utils.transcript_video import TranscriptVideo
 from app.utils.postgres_manager import PostgresManager
 from app.utils.functions import generate_hash
 
-load_dotenv()
+load_dotenv(override=True)
 
 data_dir = os.environ.get('DATA_DIR')
 
@@ -29,41 +28,42 @@ def post_video_action(request):
     note_language = request.form.get('note_language', 'pl')
     video_file = request.files.get("video_file")
     if not video_file:
-        return jsonify({"status": "ERROR", "message": "No video file provided"})
+        return {"status": "ERROR", "message": "No video file provided"}
     
     filename = video_file.filename
     if not filename.endswith(".mp4"):
-        return jsonify({"status": "ERROR", "message": "Wrong file format"})
+        return {"status": "ERROR", "message": "Wrong file format"}
     
     ok, code, session = DataManager(user_id, note_language, filename, video_file).save()
-    _, _ = PostgresManager().create_file(filename, "video", video_file.content_length, user_id, generate_hash(filename))
+    file_size = os.path.getsize(os.path.join(data_dir, str(user_id), str(session), filename))
+    _, _ = PostgresManager().create_file(filename, "video", file_size, session, user_id, '')
     tv = TranscriptVideo()
     thread = Thread(target=tv.transcript_video, args=(user_id, session, "transript_video"))
     thread.start()
-    return jsonify({
+    return {
                 "status": ok,
                 "message": "Video is now processing. You can check if result is ready using ready_suffix",
                 "code": code,
                 "user_id": user_id,
                 "session": session,
                 "ready_suffix": f"/api/result_ready/{user_id}/{session}"
-            })
+            }
 
 def result_ready(user_id, session):
     result_folder = os.path.join(data_dir, str(user_id), str(session))
     for result_file in os.listdir(result_folder):
         print(f"result file {result_file}")
         if result_file.endswith(".pdf"):
-            return jsonify({
+            return {
                 "status": "Ok",
                 "message": "Results ready. You can download them using download_suffix or get them by mail using mail_suffix",
                 "download_suffix": f"/api/download/{user_id}/{session}",
                 "mail_suffix": f"/api/send_email/{user_id}/{session}"
-            })
-    return jsonify({
+            }
+    return {
                 "status": "ERROR",
                 "message": "Result is not ready yet!"
-    })
+    }
 
 def get_file_path(folder):
     for file_name in os.listdir(folder):

@@ -4,9 +4,10 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from config import Config
 import os
+
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 app = Flask(__name__)
 
