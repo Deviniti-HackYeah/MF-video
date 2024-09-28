@@ -213,6 +213,6 @@ class LLMAnalyzer:
         return ok, result, error
     
     
-llm = LLMAnalyzer('cache')
-output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania", "Kim jesteś?", max_tokens=100)
-print(output)
+# llm = LLMAnalyzer('cache')
+# output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania", "Kim jesteś i ile masz lat?", max_tokens=100)
+# print(output)

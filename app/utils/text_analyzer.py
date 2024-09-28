@@ -43,11 +43,11 @@ class TextAnalyzer:
         return reading_ease, grade, dale_chall
     
     
-ta = TextAnalyzer()
-text = "W obniżeniu ulega oprocentowanie oferowanych obligacji przy jednoczesnym zachowaniu preferencji dla rynku detalicznego względem rynku hurtowego dedykowanego inwestorom instytucjonalnym."
-gf = ta.gunning_fog(text)
-print(f"GF: {gf}")
-reading_ease, grade, dale_chall = ta.readibility(text)
-print(f"Flesch reading ease: {reading_ease} | Flesch-Kincaid grade: {grade} | Dale-Chall Readibility Score: {dale_chall}")
+# ta = TextAnalyzer()
+# text = "W obniżeniu ulega oprocentowanie oferowanych obligacji przy jednoczesnym zachowaniu preferencji dla rynku detalicznego względem rynku hurtowego dedykowanego inwestorom instytucjonalnym."
+# gf = ta.gunning_fog(text)
+# print(f"GF: {gf}")
+# reading_ease, grade, dale_chall = ta.readibility(text)
+# print(f"Flesch reading ease: {reading_ease} | Flesch-Kincaid grade: {grade} | Dale-Chall Readibility Score: {dale_chall}")
         
         

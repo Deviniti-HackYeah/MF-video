@@ -279,6 +279,7 @@ class TranscriptVideo:
         # Readibility metrics
         ta = TextAnalyzer()
         full_text = self.get_full_text_from_words(word_dict)
+        full_text_cleared = full_text.replace(".", "").replace(",", "").replace(" ", "")
         gunning_fog = ta.gunning_fog(full_text)
         reading_ease, grade, dale_chall = ta.readibility(full_text)
                         
@@ -288,6 +289,7 @@ class TranscriptVideo:
             'total_pause_time': total_pause_time,
             'word_count': word_count,
             'words_per_second': words_per_second,
+            'letter_count': len(full_text_cleared),
             'readibility':
                 {
                     'gunning_fog': gunning_fog,
@@ -296,7 +298,7 @@ class TranscriptVideo:
                     'dale_chall_readibility_score': dale_chall
                 }
         }
-             
+        print(stats)
         return stats
     
     

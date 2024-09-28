@@ -12,3 +12,5 @@ numpy
 scikit-learn
 whisper-timestamped
 pydub
+python-dotenv
+librosa
