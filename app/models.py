@@ -69,7 +69,7 @@ class File(db.Model):
             "progress": self.progress,
             "processed": self.processed,
             "session": self.session,
-            "file": self.size,
+            "size": self.size,
             "user_id": self.user_id
         }
 
