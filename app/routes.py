@@ -15,16 +15,11 @@ app = Blueprint('app', __name__)
 
 data_dir = os.environ.get('DATA_DIR')
 
-def add_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
 
 @app.route("/", methods=["GET", "OPTIONS"])
 @cross_origin()
 def home():
-    return add_headers(jsonify({"message": "Hello, World!"}))
+    return jsonify({"message": "Hello, World!"})
 
 @app.route("/register", methods=["POST"])
 @cross_origin()
