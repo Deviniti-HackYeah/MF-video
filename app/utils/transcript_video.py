@@ -104,6 +104,8 @@ class TranscriptVideo:
     
         total_talking_time = end - start
         print(total_talking_time)
+        
+        return total_talking_time
     
     
 tv = TranscriptVideo()
