@@ -4,7 +4,6 @@ from flask_migrate import Migrate
 from config import Config
 import os
 from dotenv import load_dotenv
-import whisper_timestamped as whisper
 
 load_dotenv()
 
@@ -15,7 +14,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.getenv('DB_U
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-whisper_model = whisper.load_model('large')
 
 from .routes import app as app_blueprint
 app.register_blueprint(app_blueprint)

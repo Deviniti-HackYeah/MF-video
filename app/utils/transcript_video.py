@@ -7,7 +7,20 @@ from text_analyzer import TextAnalyzer
 
 class TranscriptVideo:
     def __init__(self):
-        pass
+    
+        if os.environ.get("WHISPER_API_KEY"):
+            client = AzureOpenAI(
+                api_key=os.environ.get('WHISPER_API_KEY'),
+                api_version="2023-09-01-preview",
+                azure_endpoint=os.environ.get('WHISPER_API_URL'),
+            )
+
+            model = "whisper"
+            print(" * Transcribing (openai_api/azure) audio file")
+            
+        else:
+            pass
+            
 
     def __str__(self):
         return "Transcript Video using Whisper"
@@ -71,26 +84,38 @@ class TranscriptVideo:
         
         print(f"Transcripting video for customer {customer_id} and session {session} using {action}")
         
-        whisper_model = whisper.load_model('large')
-        # result = whisper.transcribe(whisper_model, file_path, fp16=False, beam_size=5, best_of=5, temperature=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0))
+        if not os.environ.get("WHISPER_API_KEY"):
+            whisper_model = whisper.load_model('large')
         
-        result = whisper.transcribe(whisper_model, 
-                                    file_path, 
-                                    fp16=False, 
-                                    beam_size=5, 
-                                    best_of=5, 
-                                    temperature=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0), 
-                                    detect_disfluencies=True)
+            result = whisper.transcribe(whisper_model, 
+                                        file_path, 
+                                        fp16=False, 
+                                        beam_size=5, 
+                                        best_of=5, 
+                                        temperature=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0), 
+                                        detect_disfluencies=True)
+            
+            
+            
+            print(f"Transcpition result: {result["text"]}")
+            print(f"Result: {result}")
+            output = {
+                "result": result
+            }
+            
+            return output     
         
-        
-        
-        print(f"Transcpition result: {result["text"]}")
-        print(f"Result: {result}")
-        output = {
-            "result": result
-        }
-        
-        return output        
+        else:
+            try:
+                audio_file= open(file_path, "rb")
+                self.logger.info(" *** Transcribing audio file" + " (" + str(self.customer_id) + " " + str(self.session) + ")")
+                print(" * Transcribing audio file" + " (" + str(self.customer_id) + " " + str(self.session) + ")")
+                output = client.audio.transcriptions.create(model = model, file=audio_file , response_format = "srt")
+                return output
+         except Exception as e:
+                self.logger.error(" *** Error: ", str(e))
+                print("Error: ", str(e))
+                return ""
         # return jsonify({"status": "OK", "message": "Video is now processing. You can check if result is ready using ready_suffix"})
         
     def word_dict(self, transcription_output: dict) -> list[dict]:        
