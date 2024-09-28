@@ -253,13 +253,13 @@ class TextAnswers:
             return ""   
         
         
-ta = TextAnswers()
+# ta = TextAnswers()
 
-text = "W obniżeniu ulega oprocentowanie oferowanych obligacji przy jednoczesnym zachowaniu preferencji dla rynku detalicznego względem rynku hurtowego, dedykowanego inwestorom instytucjonalnym."
-# text = "Kiedy poszliśmy na brunch po meetingu, okazało się że ten John to całkiem fajny gość."
-cache_dir = "cache"
-readibility_metrics = "'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54"
-metrics = "{'total_talking_time': 18.0, 'pause_count': 3, 'total_pause_time': 2.84, 'word_count': 23, 'words_per_second': 1.2777777777777777, 'letter_count': 166, 'readibility': {'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54}}"
+# text = "W obniżeniu ulega oprocentowanie oferowanych obligacji przy jednoczesnym zachowaniu preferencji dla rynku detalicznego względem rynku hurtowego, dedykowanego inwestorom instytucjonalnym."
+# # text = "Kiedy poszliśmy na brunch po meetingu, okazało się że ten John to całkiem fajny gość."
+# cache_dir = "cache"
+# readibility_metrics = "'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54"
+# metrics = "{'total_talking_time': 18.0, 'pause_count': 3, 'total_pause_time': 2.84, 'word_count': 23, 'words_per_second': 1.2777777777777777, 'letter_count': 166, 'readibility': {'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54}}"
 
 # ta.clarity_check(text, cache_dir)
 # ta.readibility_check(text, readibility_metrics)
