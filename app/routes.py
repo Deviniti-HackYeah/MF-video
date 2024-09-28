@@ -9,5 +9,5 @@ from flask import redirect, render_template, url_for
 app = Blueprint('app', __name__)
 
 @app.route("/", methods=["GET"])
-def default():
+def home():
     return jsonify({"message": "Hello, World!"})
