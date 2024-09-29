@@ -1,14 +1,14 @@
 from app.utils.llm_analyzer import LLMAnalyzer
 
 class TextAnswers:
-    def __init__(self):
-        pass
+    def __init__(self, cache_dir):
+        self.cache_dir = cache_dir
     
     def __str__(self):
         return "Answering text tasks with LLM"
     
     
-    def clarity_check(self, text, cache_dir):
+    def clarity_check(self, text):
         "Ocena zrozumiałości przekazu"
         
         prompt = """
@@ -21,7 +21,7 @@ class TextAnswers:
             elementy wpływające na zrozumiałość przekazu.
             """
                 
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -47,7 +47,7 @@ class TextAnswers:
             Wartości mertyk: {readibility_metrics}
         """
         
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -71,7 +71,7 @@ class TextAnswers:
             Hate speech: Czy tekst zawiera mowę nienawiści lub wyrażenia obraźliwe skierowane do grupy lub jednostki? Jeśli tak, określ charakter wypowiedzi i zidentyfikuj ewentualne obraźliwe treści.
         """
         
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -93,7 +93,7 @@ class TextAnswers:
             unikając nadmiernych szczegółów i cytatów. Wynik powinien być zwięzły, trafny i odzwierciedlać główne myśli przekazane w tekście.
         """
         
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -117,7 +117,7 @@ class TextAnswers:
             Zakończenie: Opisz, czy i jak zostało zrealizowane zakończenie, czy jest ono podsumowaniem całości i wyciąga wnioski z treści rozwinięcia.
         """
         
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -139,7 +139,7 @@ class TextAnswers:
             Przedstaw ocenę wraz z krótkim uzasadnieniem.
         """
         
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -161,7 +161,7 @@ class TextAnswers:
             Oczekiwany wynik: "Występują słowa lub frazy w innym języku: 'BTW, I'll confirm the date later' - angielski.
             """
             
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -207,7 +207,7 @@ class TextAnswers:
             
             """
             
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -240,7 +240,7 @@ class TextAnswers:
             Total talking time: {total_talking_time} sekund
             """
         
-        llm = LLMAnalyzer(cache_dir)
+        llm = LLMAnalyzer(self.cache_dir)
         ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
@@ -252,11 +252,34 @@ class TextAnswers:
             print(f"Error: {e}")
             return ""   
         
+    def topic_check(self, text):
+        "sprawdzanie zmiany tematu wypowiedzi"
         
-# ta = TextAnswers()
+        prompt = f"""
+            Przeanalizuj poniższy tekst pod kątem spójności tematycznej. 
+            Zidentyfikuj, czy w trakcie wypowiedzi nastąpiła zmiana głównego tematu. 
+            Wskaż, od którego momentu lub zdania nastąpiła zmiana, a także określ pierwotny oraz nowy temat. 
+            Uwzględnij różnice w kontekście i treści, które wskazują na odejście od pierwotnego wątku rozmowy.
+            """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                print(response)            
+                return response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            return "" 
+        
+        
+        
+ta = TextAnswers("cache")
 
 # text = "W obniżeniu ulega oprocentowanie oferowanych obligacji przy jednoczesnym zachowaniu preferencji dla rynku detalicznego względem rynku hurtowego, dedykowanego inwestorom instytucjonalnym."
-# # text = "Kiedy poszliśmy na brunch po meetingu, okazało się że ten John to całkiem fajny gość."
+text = "Kiedy poszliśmy na brunch po meetingu, okazało się że ten John to całkiem fajny gość. Samochód nie jeździ tak szybko jak może, bo jest przed remontem silnika"
 # cache_dir = "cache"
 # readibility_metrics = "'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54"
 # metrics = "{'total_talking_time': 18.0, 'pause_count': 3, 'total_pause_time': 2.84, 'word_count': 23, 'words_per_second': 1.2777777777777777, 'letter_count': 166, 'readibility': {'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54}}"
@@ -270,3 +293,4 @@ class TextAnswers:
 # ta.language_and_foreign_words_check(text)
 # ta.overall_taking_style(text, metrics)
 # ta.pause_quality_analysis(text, 3, "2.84s", 18)
+ta.topic_check(text)

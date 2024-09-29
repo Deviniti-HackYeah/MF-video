@@ -186,7 +186,7 @@ class LLMAnalyzer:
                 return ok, result, error
             
         try:
-            print(" * chatGPT answer from API")
+            print(" * Bielik answer from API")
             print(f" * model: {self.model}")
             chat_completion = client.chat.completions.create(
                 model=self.model,
@@ -212,6 +212,21 @@ class LLMAnalyzer:
             
         return ok, result, error
     
+    def structurize_with_gpt(self, bielik_data):
+        
+        print("Structurizing with GPT")
+        
+        model = 'gpt-4o'
+        task = """
+            As an expert in creating JSON objects, restructurize received text to the format of a JSON object. 
+            Remember to retain the original text as it is, just restructurize it. 
+            Use only keys: reccomendations (overall reccomendations in the text received), comment, score(just a single float number in scale from 0 to 10), area (area of the analysis).
+            ALWAYS ANSWER IN POLISH.
+        """
+        max_tokens = 3000
+        output = self.send_to_chat_gpt(model, task, bielik_data, max_tokens)
+        
+        return output
     def send_to_chat_gpt(self, model, task, text, max_tokens, temperature=0.00001, top_p=1, frequency_penalty=0, presence_penalty=0):
         
         client = self._get_client('gpt-4o')
