@@ -211,7 +211,7 @@ class TextResults:
             
         except Exception as e:
             print(f"Error: {e}")
-            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "language_rate.json"), {})
             return {}   
         
     async def overall_taking_style(self, text, metrics):
@@ -313,7 +313,7 @@ class TextResults:
                 final_response = json.loads(final_response)
                 if type(final_response) == dict:
                     final_response["area"] = "Ocena przeciągłości wypowiadania słów"
-                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "pauseprolongation_check_check.json"), final_response)      
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "prolongation_check_check.json"), final_response)      
                 return final_response
             
         except Exception as e:
@@ -345,7 +345,7 @@ class TextResults:
             
         except Exception as e:
             print(f"Error: {e}")
-            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "topic_change.json"), {})
             return {} 
         
     async def false_words_check(self, text, word_dict):
@@ -370,7 +370,7 @@ class TextResults:
             
         except Exception as e:
             print(f"Error: {e}")
-            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "false_words.json"), {})
             return {} 
         
     async def variety_of_statements_check(self, text):

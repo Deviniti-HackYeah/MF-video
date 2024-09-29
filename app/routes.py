@@ -8,7 +8,7 @@ from flask import redirect, render_template, url_for
 from flask_cors import cross_origin
 
 from app.utils.api_helper import post_video_action, result_ready, get_file_path, send_mail_ok
-from app.utils.functions import generate_hash, check_hash, write_to_file_with_lock, read_from_file_with_lock
+from app.utils.functions import generate_hash, check_hash, write_to_file_with_lock, read_from_file_with_lock, manage_results
 from app.utils.postgres_manager import PostgresManager
 from app.utils.text_results import TextResults
 
@@ -111,6 +111,7 @@ def result_ready(customer_id, session):
 @app.route("/send_email", methods=["POST"])
 @cross_origin()
 def send_mail():
+    # req = request.form
     req = request.get_json()
 
     params = {
@@ -143,7 +144,7 @@ def target_check():
 
 @app.route("/get_results", methods=["GET"])
 @cross_origin()
-def get_transcriptions_results():
+def get_results():
     form = request.form
     req = request.get_json()
     user_id = req.get('user_id', '')
@@ -155,14 +156,8 @@ def get_transcriptions_results():
             "status": "Pending",
             "message": "Results are not ready yet"
         }, 201)
-    transcription_results = []
-    for json_file in jsons_in_folder:
-        if json_file == "pause_check.json" or json_file == "false_words.json":
-            continue
-        data = read_from_file_with_lock(os.path.join(folder_path, json_file))
-        transcription_results.append(data)
-
-    return jsonify({"transcriptions": transcription_results}, 200)
+    result = manage_results(data_dir, user_id, session)
+    return jsonify(result, 200)
 
 @app.route("/get_pauses_results", methods=["GET"])
 @cross_origin()

@@ -25,7 +25,7 @@ def send_email(template: str, title: str, message: str, to_email: str, from_name
     try:
         with smtplib.SMTP_SSL(app.config["MAIL_SERVER"], app.config["MAIL_PORT"]) as server:
             server.set_debuglevel(0)
-            server.login(app.config["MAIL_USERNAME"], app.config["MAIL_PASSWORD"])
+            server.login(app.config["MAIL_USERNAME"], os.getenv("MAIL_PASSWORD", ""))
             server.sendmail(
                 app.config["MAIL_DEFAULT_SENDER"],
                 to_email,

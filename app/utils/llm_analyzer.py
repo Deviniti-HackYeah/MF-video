@@ -222,7 +222,14 @@ class LLMAnalyzer:
             task = f"""
                 As an expert in creating JSON objects, restructurize received text to the format of a JSON object. 
                 Remember to retain the original text as it is, just restructurize it. 
-                Use only keys: pause (list of dictionaries with keys pause_start (time in seconds), pause_end (timein_seconds), pause_duration (time in seconds) (list only the significant pauses)), recommendations (as one string), comment (about only significant pauses), score(just a single float number in scale from 0 to 10).
+                Use only keys: 
+                1) pause (list of dictionaries with keys: 
+                - pause_start (time in seconds), 
+                - pause_end (timein_seconds), 
+                - pause_duration (time in seconds) (list only the significant pauses), 
+                - recommendations (as string),
+                - comment), 
+                2) score (just a single float number in scale from 0 to 10).
                 ALWAYS ANSWER IN POLISH. Original source of the text: {kwargs.get('text', '')}
             """ # _start_index (time in seconds and index is numerator of next occurance), pause_end_index (time in seconds and index is numerator of next occurance), pause_duration_index (time in seconds and index is numerator of next occurance)
         elif "prolongation" in kwargs:
@@ -236,7 +243,14 @@ class LLMAnalyzer:
             task = f"""
                 As an expert in creating JSON objects, restructurize received text to the format of a JSON object.
                 Remember to retain the original text as it is, just restructurize it.
-                Use only keys: falses (list of dictionaries with keys false_start_start (time in seconds) false_word), recommendations (as one string), comment, score (just a single float number in scale from 0 to 10 based on number of false words).
+                Use only keys: 
+                1) falses (list of dictionaries with keys:
+                 - false_start(time in seconds),
+                 - false_word, 
+                 - recommendations (as one string),
+                 - comment)
+                 2) score (just a single float number in scale from 0 to 10 based on number of false words).
+                 ALWAYS ANSWER IN POLISH.
                 """
         else:
             task = """
