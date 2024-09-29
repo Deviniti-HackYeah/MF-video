@@ -12,6 +12,7 @@ import asyncio
 from app.utils.text_analyzer import TextAnalyzer
 from app.utils.functions import write_to_file_with_lock
 from app.utils.text_results import TextResults
+from app.utils.video_analyzer import VideoAnalyzer
 
 from dotenv import load_dotenv
 
@@ -353,8 +354,13 @@ class TranscriptVideo:
                 "stats": stats
             })
            
+            va = VideoAnalyzer(self.cache_dir, user_id, session, data_dir)
+            fps = va.extract_frames_from_video(file_name, output_folder=os.path.join(data_dir, user_id, session, 'sshot'),
+                                               speech_start=word_dict[0]['start'])
+           
             async def main():
                 tr = TextResults(self.cache_dir, user_id, session, data_dir)
+                va = VideoAnalyzer(self.cache_dir, user_id, session, data_dir)
                 
                 # Grupa 1
                 group1 = [
@@ -378,6 +384,15 @@ class TranscriptVideo:
                     tr.interjections_and_anecdotes_check(full_text),
                 ]
                 
+                # Grupa 3
+                group3 = [
+                    va.anomaly_check(os.path.join(data_dir, user_id, session, 'sshot'),
+                                                  fps),
+                    va.presenter_check(os.path.join(data_dir, user_id, session, 'sshot'), full_text),
+                    ocr_text = va.ocr(os.path.join(data_dir, user_id, session, 'sshot'), fps),
+                    va.compare_full_text(full_text, ocr_text)
+                ]
+                
                 # Wykonanie grupy 1
                 results1 = await asyncio.gather(*group1)
                 print("Group 1 checks done (Clarity, Readibility, Sentiment, Short Summary)")
@@ -385,7 +400,11 @@ class TranscriptVideo:
                 # Wykonanie grupy 2
                 results2 = await asyncio.gather(*group2)
                 print("Group 2 checks done (Structure, Language, Overall Style, Topic)")
-
+                
+                # Wykonanie grupy 3
+                results3 = await asyncio.gather(*group2)
+                print("Group 3 checks done (Video & Picture related stuff")
+                
             # Uruchomienie głównej funkcji asynchronicznej
             asyncio.run(main())
         except Exception as e:
