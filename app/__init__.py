@@ -9,6 +9,12 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+cache_path = os.getenv("CACHE_DIR")
+os.makedirs(cache_path, exist_ok=True)
+
+data_path = os.getenv("DATA_DIR")
+os.makedirs(data_path, exist_ok=True)
+
 app = Flask(__name__)
 
 app.config.from_object(Config)
