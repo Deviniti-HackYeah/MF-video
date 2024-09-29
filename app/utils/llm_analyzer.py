@@ -227,6 +227,7 @@ class LLMAnalyzer:
         output = self.send_to_chat_gpt(model, task, bielik_data, max_tokens)
         
         return output
+    
     def send_to_chat_gpt(self, model, task, text, max_tokens, temperature=0.00001, top_p=1, frequency_penalty=0, presence_penalty=0):
         
         client = self._get_client('gpt-4o')
@@ -269,11 +270,4 @@ class LLMAnalyzer:
             error = str(e)
             
         return ok, result, error
-    
-    
-# llm = LLMAnalyzer('cache')
-# output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania. Odpowiedz w formacie obiektu JSON z kluczami: powitanie, moje_imie", "Kim jesteś i ile masz lat?", max_tokens=100)
-# print(output)
-llm = LLMAnalyzer("cache")
-output = llm.send_to_chat_gpt(model="gpt-4o", task="Jesteś pomocnym asystentem. Odpowiedz w formacie obiektu json z kluczami: witam, data", text="Jaki jest dzisiaj dzień?", max_tokens=1000)
-print(output)
+
