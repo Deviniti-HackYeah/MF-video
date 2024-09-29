@@ -8,19 +8,23 @@ from ast import literal_eval
 
 from openai import OpenAI
 from llm_analyzer import LLMAnalyzer
+from functions import write_to_file_with_lock
 
 load_dotenv()
 
 class VideoAnalyzer:
-    def __init__(self, cache_dir):
+    def __init__(self, cache_dir, user_id, session, data_dir):
         self.cache_dir = cache_dir
+        self.user_id = user_id
+        self.session = session
+        self.data_dir = data_dir
 
     def __str__():
         return "Analyzing images and videos"
     
 
     def extract_frames_from_video(self, 
-                                video_path: str,
+                                  file_name:str, 
                                 output_folder: str,
                                 speech_start: float,
                                 interval: float = 1) -> int:
@@ -34,6 +38,7 @@ class VideoAnalyzer:
         - interval: Interval at which to capture frames (in seconds). Default is 0.5 seconds (2 FPS).
         """
         # Check if the file exists
+        video_path = os.path.join(self.data_dir, user_id, session, file_name)
         if not os.path.isfile(video_path):
             print(f"Error: Video file '{video_path}' does not exist.")
             return
@@ -145,6 +150,7 @@ class VideoAnalyzer:
         
         
     def anomaly_check(self, image_dir: str, fps: int) -> list[dict]:
+        os.makedirs(image_dir, exist_ok=True)
         images = os.listdir(image_dir)
         images = [img for img in images if img.endswith(".jpg")]
         
@@ -161,22 +167,47 @@ class VideoAnalyzer:
         for idx, image in enumerate(images):
             print(f"{idx} / {len(images)}")
             img_path = os.path.join(image_dir, image)
-            base64_img = va.img_to_base64(img_path)
+            base64_img = self.img_to_base64(img_path)
             
-            response = json.loads(va.analyze_image(prompt, base64_img))
-            if response['is_anomaly'] == True:
+            bielik_response = json.loads(self.analyze_image(prompt, base64_img))
+            print(bielik_response)
+            if bielik_response['is_anomaly'] == True:
                 frame_no = image.split("_")[-1].split(".")[0].replace("frame", "")
                 timestamp = float(frame_no) / fps
                 print(f"Timestamp: {timestamp}s")
-                response['timestamp'] = timestamp
-                print(response)
-                anomalies.append(response)
+                bielik_response['timestamp'] = timestamp
+                print(bielik_response)
+                anomalies.append(bielik_response)
                 
         print(f"Anomalies: {anomalies}")
-        return anomalies
+        
+        try:
+            temp = {"anomalies": []}
+            for anomaly in anomalies:
+                temp['anomalies'].append({
+                    'timestamp': anomaly['timestamp'],
+                    'anomaly_type': anomaly['anomaly_type']
+                })
+                llm = LLMAnalyzer(self.cache_dir)
+                ok, final_response, error = llm.structurize_with_gpt(str(anomaly))
+                final_response = json.loads(final_response)
+                temp["area"] = "Ocena wizualnych anomalii (mimika, gestykulacja, osoby trzecie)"
+                temp["score"] = final_response['score']
+                print(f"Final response: {final_response}")
+            if type(temp) == dict:
+                temp["area"] = "Ocena wizualnych anomalii (tiki, gestykulacja, osoby trzecie)"
+                temp["score"] = final_response['score']
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "visual_anomalies.json"), temp)      
+                return temp
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "visual_anomalies.json"), {})
+            return {}
                 
                 
     def presenter_check(self, image_dir: str, full_text: str):
+        print(f"imgdir: {image_dir}")
         images = os.listdir(image_dir)
         images = sorted([img for img in images if img.endswith(".jpg")])
         
@@ -193,9 +224,9 @@ class VideoAnalyzer:
         for idx, image in enumerate(images):
             print(f"{idx} / {len(images)}")
             img_path = os.path.join(image_dir, image)
-            base64_img = va.img_to_base64(img_path)
+            base64_img = self.img_to_base64(img_path)
             
-            response = json.loads(va.analyze_image(prompt, base64_img))
+            response = json.loads(self.analyze_image(prompt, base64_img))
             checks.append(response)
                 
         print(f"Checks: {checks}")
@@ -211,16 +242,19 @@ class VideoAnalyzer:
         ok, bielik_data, error = llm.send_to_chat('bielik', task, str(checks), 3000)
         
         if ok:
-            summary = llm.structurize_with_gpt(bielik_data)
+            ok, final_response, error = llm.structurize_with_gpt(bielik_data)
             
-            if summary:
-                print(summary)
-                return summary
-            
-            else:
-                return {}
-        else: 
-            return {}
+            if ok:
+                try:
+                    final_response = json.loads(final_response)
+                    final_response["area"] = "Wizualna ocena prezentera"
+                    _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "presenter_check.json"), final_response)      
+                    return final_response
+                    
+                except Exception as e:
+                    print(f"Error: {e}")
+                    _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "presenter_check.json"), {})
+                    return {}
         
         
     def ocr(self, image_dir: str, fps: int):
@@ -239,9 +273,9 @@ class VideoAnalyzer:
         for idx, image in enumerate(images):
             print(f"{idx} / {len(images)}")
             img_path = os.path.join(image_dir, image)
-            base64_img = va.img_to_base64(img_path)
+            base64_img = self.img_to_base64(img_path)
             
-            response = json.loads(va.analyze_image(prompt, base64_img))
+            response = json.loads(self.analyze_image(prompt, base64_img))
             frame_no = image.split("_")[-1].split(".")[0].replace("frame", "")
             response['frame_no'] = frame_no
             
@@ -264,6 +298,9 @@ class VideoAnalyzer:
                  if current.strip().lower() != merged_text[-1].strip().lower():
                      merged_text.append(current)
                      
+        if merged_text:
+            pass
+                     
         return " ".join(merged_text)
     
     
@@ -277,30 +314,23 @@ class VideoAnalyzer:
         
         llm = LLMAnalyzer(self.cache_dir)
         text = f"Tekst z OCR: {ocr_text}\nTekst z transkrypcji: {full_text}"
-        response = llm.send_to_chat('bielik', prompt, text, 2000)
+        ok, bielik_response, error = llm.send_to_chat('bielik', prompt, text, 2000)
         
-        if response:
-            return response
-
-        else:
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena jasności przekazu wypowiedzi (zrozumiałość)"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "compare_transcription.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "compare_transcription.json"), {})
             return {}
                      
 
-        
-va = VideoAnalyzer("cache")
-video_path = "/Users/pkiszczak/projects/deviniti/MF-video/HY_2024_film_11.mp4"
-fps = va.extract_frames_from_video(video_path, "data", 9.77, 4) # first, earliest timestamp from word_dict
 
-img_path = "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/data/HY_2024_film_11_frame544.jpg"
-data_dir = "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/data"
-files = os.listdir(data_dir)
 
-# anomalies = va.anomaly_check(data_dir, fps)
-full_text = "Żabki są zielone, krowy są łaciate. Ja cię lubię niczym herbatę."
-# checks = va.presenter_check(data_dir, full_text) # full text from transcribing
-
-ocr_text = va.ocr(data_dir, fps)
-
-comparison = va.compare_full_text(full_text, ocr_text)
-print(comparison)
 
