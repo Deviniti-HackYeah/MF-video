@@ -14,11 +14,27 @@ services:
       - mf_video_shared:/app/mf-video
     environment:
       - DATA_DIR=${DATA_DIR}
+      - CACHE_DIR=${CACHE_DIR}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_DB=${DB_DB}
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
+      - BIELIK_MODEL_URL=${BIELIK_MODEL_URL}
+      - BIELIK_MODEL_NAME=${BIELIK_MODEL_NAME}
+      - BIELIK_API_KEY=${BIELIK_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL_NAME=${OPENAI_MODEL_NAME}
+      - WHISPER_API_KEY=${WHISPER_API_KEY}
+      - WHISPER_API_URL=${WHISPER_API_URL}
+      - MAIL_SERVER=${MAIL_SERVER}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_USE_TLS=${MAIL_USE_TLS}
+      - MAIL_USE_SSL=${MAIL_USE_SSL}
+      - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER}
+      - VIEW_URL=${VIEW_URL}
     depends_on:
       - mf_video_db
     networks:

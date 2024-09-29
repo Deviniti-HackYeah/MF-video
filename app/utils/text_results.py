@@ -1,16 +1,22 @@
-from app.utils.llm_analyzer import LLMAnalyzer
+import os
+import json
+import asyncio
 
-class TextAnswers:
-    def __init__(self, cache_dir):
+from app.utils.llm_analyzer import LLMAnalyzer
+from app.utils.functions import write_to_file_with_lock
+
+class TextResults:
+    def __init__(self, cache_dir, user_id, session, data_dir):
         self.cache_dir = cache_dir
+        self.user_id = user_id
+        self.session = session
+        self.data_dir = data_dir
     
     def __str__(self):
         return "Answering text tasks with LLM"
     
-    
-    def clarity_check(self, text):
+    async def clarity_check(self, text):
         "Ocena zrozumiałości przekazu"
-        
         prompt = """
             Przeanalizuj poniższy tekst i oceń jego zrozumiałość. Weź pod uwagę następujące kryteria:
             Jasność przekazu: Czy tekst jest napisany w sposób zrozumiały dla odbiorcy? Czy używane są proste i jednoznaczne wyrażenia?
@@ -22,19 +28,24 @@ class TextAnswers:
             """
                 
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                # print(bielik_response)
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena zrozumiałości przekazu"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            return {}
             
-        
-    def readibility_check(self, text, readibility_metrics):
+    async def readibility_check(self, text, readibility_metrics):
         "miary prostego języka: gunning fog, indeks czytelności flescha"
         
         prompt = f"""
@@ -48,19 +59,23 @@ class TextAnswers:
         """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Miary czytelności tekstu"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "readibility_measures.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "readibility_measures.json"), {})
+            return {}
         
-        
-    def sentiment_check(self, text):
+    async def sentiment_check(self, text):
         "analiza sentymentu wypowiedzi"
         
         prompt = """
@@ -72,19 +87,23 @@ class TextAnswers:
         """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Sentyment wypowiedzi"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "sentiment.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
-        
-        
-    def short_summary_check(self, text):
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "sentiment.json"), {})
+            return {}
+          
+    async def short_summary_check(self, text):
         "krótkie tekstowe podsumowanie wypowiedzi w języku polskim – co zostało zrozumiane przez odbiorcę (kluczowe przekazy)"
         
         prompt = """
@@ -94,19 +113,23 @@ class TextAnswers:
         """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                # ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                # final_response = json.loads(final_response)
+                # if type(final_response) == dict:
+                #     final_response["area"] = "Sentyment wypowiedzi"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "short_sumamry.json"), {"short_summary": bielik_response})      
+                return bielik_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
-        
-        
-    def structure_check(self, text):
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "short_sumamry.json"), {})
+            return {}
+           
+    async def structure_check(self, text):
         "ocena struktury tekstu: czy zachowane zostały wstęp, rozwinięcie i zakończnie"
         
         prompt = """Przeanalizuj podany tekst, aby ocenić jego strukturę. Zidentyfikuj, czy występuje w nim logiczny wstęp, rozwinięcie oraz zakończenie. 
@@ -118,63 +141,80 @@ class TextAnswers:
         """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena struktury tekstu"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "text_structure.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "text_structure.json"), {})
+            return {}
         
-        
-    def target_group_check(self, text):
+    async def target_group_check(self, text, target_groups, target_education):
         "ocena grupy docelowej wypowiedzi"
         
-        prompt = """
+        prompt = f"""
             Przeanalizuj podany tekst w celu określenia grupy docelowej omawianego nagrania pod kątem grupy wiekowej oraz poziomu wykształcenia odbiorców. 
-            Zwróć uwagę na styl języka, używane słownictwo, omawiane tematy oraz wszelkie kontekstowe wskazówki sugerujące docelową demografię. 
+            Zwróć uwagę na styl języka, używane słownictwo, omawiane tematy oraz wszelkie kontekstowe wskazówki sugerujące docelową demografię. Następnie porównaj
+            to z informacjami o grupie docelowej, które zostały dostarczone w opisie zadania. Czy tekst jest dostosowany do odbiorców z podanego 
+            zakresu/zakresów wiekowych: {target_groups} oraz poziomu/poziomów wykształcenia: {target_education}?
             Przedstaw ocenę wraz z krótkim uzasadnieniem.
         """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena struktury tekstu"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "target_group.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "target_group.json"), {})
+            return {}
         
-    def language_and_foreign_words_check(self, text):
+    async def language_and_foreign_words_check(self, text):
         "ocena języka i wtrąceń w innych jezykach niż polski"
         prompt = """
             Przeanalizuj poniższy tekst i oceń, czy jest on w pełni napisany w języku polskim. 
             W przypadku wystąpienia słów, fraz lub wyrażeń w innym języku (np. angielskim, niemieckim, francuskim itp.), zidentyfikuj te fragmenty i wskaż, w jakim języku zostały napisane. 
-            Wynik przedstaw jako jedną z opcji: 'Tekst w pełni po polsku', 'Występują słowa lub frazy w innym języku' oraz wypisz znalezione fragmenty z przypisaniem języka."
+            Wynik przedstaw jako jedną z opcji: 'Tekst w pełni po polsku', 'Występują słowa lub frazy w innym języku' oraz wypisz znalezione fragmenty z przypisaniem języka.
+            Jeśli tekst jest w pełni po polsku, daj maksymalną ocenę i nie dawaj żadnych rekomendacji (tj. wpisz '-'),
+            jeśli zawiera wtrącenia w innym języku, na podstawie ich liczby określ, czy mogą wpłynąć na zrozumienie tekstu i odpowiednio obniż ocenę.
             Przykładowy tekst do analizy: "Spotkajmy się na lunch w przyszłym tygodniu. BTW, I'll confirm the date later."
             Oczekiwany wynik: "Występują słowa lub frazy w innym języku: 'BTW, I'll confirm the date later' - angielski.
             """
             
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena języka i wtrąceń w innych językach"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "language_rate.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""   
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            return {}   
         
-    
-    def overall_taking_style(self, text, metrics):
+    async def overall_taking_style(self, text, metrics):
         "ogólna ocena jakości wypowiedzi mówcy z uwzględnieniem metryk"
         
         prompt = f"""
@@ -208,51 +248,80 @@ class TextAnswers:
             """
             
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena ogólnej jakości wypowiedzi"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "overall_rating.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""
+            return {}
         
-    
-    def pause_quality_analysis(self, text, pause_count, total_pause_time, total_talking_time):
-        "ocena "
-        
+    async def pause_quality_analysis(self, text): # , pause_count, total_pause_time, total_talking_time
+        "ocena występowania przerw w wypowiedzi"
+   
         prompt = f"""
-            Przeanalizuj dostarczone nagranie przy użyciu następujących metryk: 'pause_count' oraz 'total_pause_time'. Oceń jakość wypowiedzi w oparciu o te wskaźniki, biorąc pod uwagę następujące aspekty:
-            Przerwy:
-            Liczba przerw (pause_count).
-            Łączny czas przerw (total_pause_time w sekundach).
-            Łączny czas wypowiedzi (total_talking_time).
-            Płynność Wypowiedzi:
-            Sprawdź, czy przerwy wpływają na płynność mówienia, np. czy są zbyt częste lub trwają zbyt długo.
-            Błędy Językowe:
-            Wykryj możliwe błędy językowe, takie jak wahania, powtórzenia, użycie wypełniaczy (np. "yyy", "eee"), które mogą wynikać z długich lub częstych przerw.
-            Przedstaw szczegółową ocenę, wskazując obszary do poprawy oraz pozytywne elementy wypowiedzi.
-            
-            Pause count: {pause_count} 
-            Total pause time: {total_pause_time} sekund
-            Total talking time: {total_talking_time} sekund
+            Dostarczony tekst to transkrypcja wypowiedzi mówcy (w formie listy). Przeanalizuj ją pod kątem początku i końca danego fragmentu wypowiedzi. Jeśli różnica pomiędzy czasem zakończenia
+            danego fragmentu a czasem rozpoczęcia kolejnego fragmentu wynosi więcej niż sekundę (czyli długość przerwy między fragmentami jest większa niż 1 sekunda), oznacza to
+            niechcianą pauzę w wypowiedzi. Zidentyfikuj takie przerwy i określ ich długość w sekundach oraz wskaż czas w jakim taka przerwa się zaczyna i w jakim kończy. 
+            Następnie ocen, czy przerwy wpływają na płynność wypowiedzi, czy są zbyt długie
+            lub zbyt częste. Wskaz, czy przerwy są związane z błędami językowymi, takimi jak wahania, powtórzenia, użycie wypełniaczy (np. "yyy", "eee") , które mogą wynikać z długich
+            lub częstych przerw. Przedstaw szczegółową ocenę, wskazując obszary do poprawy oraz pozytywne elementy wypowiedzi.
             """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, str(text), max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response, pause=True, text=str(text))
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena ciągłości wypowiedzi (występowanie przerw)"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "pause_check.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return ""   
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "pause_check.json"), {})
+            return {}
         
-    def topic_check(self, text):
+    async def prolongation_check(self, text):
+        "ocena przeciągłości wypowiadania słów"
+ 
+        prompt = f"""
+            Dostarczony tekst to transkrypcja wypowiedzi mówcy (w formie listy). Przeanalizuj ją pod kątem początku i końca danego fragmentu wypowiedzi. Jeśli różnica pomiędzy czasem rozpoczęcia
+            danego fragmentu a czasem zakończenia tego fragmentu wynosi więcej niż 0.8 sekundy (czyli długość wypowiedzi danego słowa jest większa niż 0.8 sekundy), oznacza to,
+            że mówca przeciąga wypowiadanie danego słowa. Zidentyfikuj takie fragmenty i określ ich długość w sekundach. Następnie ocen, czy przeciąganie wypowiadania słów wpływa
+            na płynność wypowiedzi, czy są zbyt długie lub zbyt częste. Wskaz, czy przeciąganie wypowiadania słów jest związane z błędami językowymi, takimi jak wahania, powtórzenia,
+            użycie wypełniaczy (np. "yyy", "eee"), które mogą wynikać z długich lub częstych przerw. 
+            Przedstaw szczegółową ocenę, wskazując obszary do poprawy oraz pozytywne elementy wypowiedzi.
+            """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, str(text), max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response, prolongation=True, text=str(text))
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena przeciągłości wypowiadania słów"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "pauseprolongation_check_check.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "prolongation_check.json"), {})
+            return {}   
+        
+    async def topic_check(self, text):
         "sprawdzanie zmiany tematu wypowiedzi"
         
         prompt = f"""
@@ -263,34 +332,155 @@ class TextAnswers:
             """
         
         llm = LLMAnalyzer(self.cache_dir)
-        ok, response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
         
         try:
             if ok:
-                print(response)            
-                return response
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena zmiany tematu wypowiedzi (spójność tematyczna)"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "topic_change.json"), final_response)      
+                return final_response
             
         except Exception as e:
             print(f"Error: {e}")
-            return "" 
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            return {} 
         
+    async def false_words_check(self, text, word_dict):
+        "sprawdzenie niepoprawnych/nieistniejących słów w wypowiedzi lub zwrotów nie mających sensu np. słona wata cukrowa"
         
+        prompt = f"""
+            Przeanalizuj poniższy tekst pod kątem występowania niepoprawnych/nieistniejących słów lub zwrotów nie mających sensu (np. słona wata cukrowa lub sucha woda) 
+            bądź niewłaściwie użytych związków frazeologicznych. Zidentyfikuj takie fragmenty i wskaż, w jaki sposób mogą wpłynąć na zrozumienie tekstu.
+            """
         
-ta = TextAnswers("cache")
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response, false_words=True, text=str(word_dict))
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena niepoprawnych/nieistniejących słów/zwrotów w wypowiedzi"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "false_words.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_check.json"), {})
+            return {} 
+        
+    async def variety_of_statements_check(self, text):
+        "sprawdzenie różnorodności wypowiedzi (powtarzanie tych samych słów, fraz)"
+        
+        prompt = f"""
+            Przeanalizuj poniższy tekst pod kątem różnorodności wypowiedzi. Zidentyfikuj, czy w tekście występuje powtarzanie tych samych słów, fraz lub zdań.
+            Określ, czy powtarzanie jest celowe (np. w celu podkreślenia ważnych informacji) czy przypadkowe (np. wynikające z braku zróżnicowania w słownictwie).
+            Wskaż, jakie słowa, frazy lub związki frazeologiczne powtarzają się najczęściej i jakie mogą być tego przyczyny.
+            Oceń, czy powtarzanie wpływa na zrozumienie tekstu i czy może być uznane za wadę wypowiedzi.
+            """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena różnorodności wypowiedzi"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "variety_of_statements.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "variety_of_statements.json"), {})
+            return {} 
+        
+    async def active_form_check(self, text):
+        "sprawdzenie czy wypowiedź jest w formie czynnej, czy nie ma za dużo zdań w stronie biernej"
+        
+        prompt = f"""
+            Przeanalizuj poniższy tekst pod kątem formy gramatycznej. Zidentyfikuj, czy wypowiedź jest w formie czynnej, 
+            czy zawiera zbyt wiele zdań w stronie biernej (użyte słowa np. podano, wskazano, podsumowano).
+            Określ, czy użycie formy biernej jest uzasadnione (np. w celu podkreślenia roli obiektu w zdaniu) czy niepotrzebne (np. wynikające z braku zróżnicowania w konstrukcjach zdaniowych).
+            Wskaż, jakie słowa, frazy lub związki frazeologiczne sugerują, że wypowiedź jest w formie biernej i jakie mogą być tego przyczyny.
+            Oceń, czy użycie formy biernej wpływa na zrozumienie tekstu i czy może być uznane za wadę wypowiedzi.
+            """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena formy gramatycznej wypowiedzi (aktywna/bierna)"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "active_form_check.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "active_form_check.json"), {})
+            return {} 
+        
+    async def clarity_of_information_check(self, text):
 
-# text = "W obniżeniu ulega oprocentowanie oferowanych obligacji przy jednoczesnym zachowaniu preferencji dla rynku detalicznego względem rynku hurtowego, dedykowanego inwestorom instytucjonalnym."
-text = "Kiedy poszliśmy na brunch po meetingu, okazało się że ten John to całkiem fajny gość. Samochód nie jeździ tak szybko jak może, bo jest przed remontem silnika"
-# cache_dir = "cache"
-# readibility_metrics = "'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54"
-# metrics = "{'total_talking_time': 18.0, 'pause_count': 3, 'total_pause_time': 2.84, 'word_count': 23, 'words_per_second': 1.2777777777777777, 'letter_count': 166, 'readibility': {'gunning_fog': 24.44, 'flesch_reading_ease': 1.43, 'flesch_kincaid_grade_level': 17.8, 'dale_chall_readibility_score': 19.54}}"
-
-# ta.clarity_check(text, cache_dir)
-# ta.readibility_check(text, readibility_metrics)
-# ta.sentiment_check(text)
-# ta.short_summary_check(text)
-# ta.structure_check(text)
-# ta.target_group_check(text)
-# ta.language_and_foreign_words_check(text)
-# ta.overall_taking_style(text, metrics)
-# ta.pause_quality_analysis(text, 3, "2.84s", 18)
-ta.topic_check(text)
+        "sprawdzenie czy wypowiedź jest jasna i zrozumiała, czy nie zawiera np. za dużo liczb, skrótów, terminów"
+        
+        prompt = f"""
+            Przeanalizuj poniższy tekst pod kątem jasności przekazu. Zidentyfikuj, czy wypowiedź jest napisana w sposób zrozumiały dla odbiorcy,
+            czy zawiera zbyt wiele skrótów, terminów, liczb lub specjalistycznych wyrażeń. Określ, czy użycie skrótów i terminów jest uzasadnione
+            (np. w celu skrócenia tekstu lub podkreślenia specyficznych informacji) czy niepotrzebne (np. wynikające z braku zrozumienia odbiorcy).
+            Wskaż, jakie słowa, frazy lub związki frazeologiczne sugerują, że wypowiedź jest trudna do zrozumienia i jakie mogą być tego przyczyny.
+            Oceń, czy użycie skrótów i terminów wpływa na zrozumienie tekstu i czy może być uznane za wadę wypowiedzi.
+            """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena jasności przekazu wypowiedzi (zrozumiałość)"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_of_information_check.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "clarity_of_information_check.json"), {})
+            return {}
+        
+    async def interjections_and_anecdotes_check(self, text):
+        "sprawdzenie czy w wypowiedzi występują zbędne wtrącenia, anegdoty, niepotrzebne opisy"
+        
+        prompt = f"""
+            Przeanalizuj poniższy tekst pod kątem wtrąceń i anegdot. Zidentyfikuj, czy wypowiedź zawiera zbyt wiele wtrąceń, anegdot, niepotrzebnych opisów lub zbędnych informacji.
+            Określ, czy użycie wtrąceń i anegdot jest uzasadnione (np. w celu urozmaicenia tekstu lub podkreślenia ważnych informacji) 
+            czy niepotrzebne (np. wynikające z braku zróżnicowania w konstrukcjach zdaniowych).
+            Wskaż, jakie słowa, frazy lub związki frazeologiczne sugerują, że wypowiedź zawiera zbyt wiele wtrąceń i anegdot oraz jakie mogą być tego przyczyny.
+            Oceń, czy użycie wtrąceń i anegdot wpływa na zrozumienie tekstu i czy może być uznane za wadę wypowiedzi.
+            """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        ok, bielik_response, error = llm.send_to_chat("bielik", prompt, text, max_tokens=2000, temperature=0.1)
+        
+        try:
+            if ok:
+                ok, final_response, error = llm.structurize_with_gpt(bielik_response)
+                final_response = json.loads(final_response)
+                if type(final_response) == dict:
+                    final_response["area"] = "Ocena wtrąceń i anegdot w wypowiedzi"
+                _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "interjections_and_anecdotes_check.json"), final_response)      
+                return final_response
+            
+        except Exception as e:
+            print(f"Error: {e}")
+            _ = write_to_file_with_lock(os.path.join(self.data_dir, str(self.user_id), str(self.session), "interjections_and_anecdotes_check.json"), {})
+            return {} 

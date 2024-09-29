@@ -7,8 +7,11 @@ import numpy as np
 import os
 from openai import AzureOpenAI
 import json
+import asyncio
 
 from app.utils.text_analyzer import TextAnalyzer
+from app.utils.functions import write_to_file_with_lock
+from app.utils.text_results import TextResults
 
 from dotenv import load_dotenv
 
@@ -30,6 +33,7 @@ class TranscriptVideo:
             
         else:
             pass
+        self.cache_dir = os.getenv("CACHE_DIR", "/cache")
 
     def __str__(self):
         return "Transcript Video using Whisper"
@@ -343,13 +347,47 @@ class TranscriptVideo:
         full_text = self.get_full_text(output)
         stats = self.text_stats(word_dict)
         try:
-            with open(os.path.join(session_dir,"transcription_data.json"), 'w') as f:
-                json.dump({
-                    "word_dict": word_dict,
-                    "full_text": full_text,
-                    "stats": stats
-                }, f, ensure_ascii=False, indent=4)
-            return True
+            _ = write_to_file_with_lock(os.path.join(session_dir, "transcription_data.json"), {
+                "word_dict": word_dict,
+                "full_text": full_text,
+                "stats": stats
+            })
+           
+            async def main():
+                tr = TextResults(self.cache_dir, user_id, session, data_dir)
+                
+                # Grupa 1
+                group1 = [
+                    tr.clarity_check(full_text),
+                    tr.readibility_check(full_text, stats.get("readibility", {})),
+                    tr.sentiment_check(full_text),
+                    tr.short_summary_check(full_text),
+                    tr.pause_quality_analysis(word_dict),
+                    tr.structure_check(full_text),
+                    tr.language_and_foreign_words_check(full_text),
+                ]
+                
+                # Grupa 2
+                group2 = [
+                    tr.overall_taking_style(full_text, stats),
+                    tr.topic_check(full_text),
+                    tr.false_words_check(full_text, word_dict),
+                    tr.variety_of_statements_check(full_text),
+                    tr.active_form_check(full_text),
+                    tr.clarity_of_information_check(full_text),
+                    tr.interjections_and_anecdotes_check(full_text),
+                ]
+                
+                # Wykonanie grupy 1
+                results1 = await asyncio.gather(*group1)
+                print("Group 1 checks done (Clarity, Readibility, Sentiment, Short Summary)")
+                
+                # Wykonanie grupy 2
+                results2 = await asyncio.gather(*group2)
+                print("Group 2 checks done (Structure, Language, Overall Style, Topic)")
+
+            # Uruchomienie głównej funkcji asynchronicznej
+            asyncio.run(main())
         except Exception as e:
             print(f"Error saving transcription: {e}")
             return False

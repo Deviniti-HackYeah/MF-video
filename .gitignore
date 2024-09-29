@@ -164,3 +164,4 @@ cython_debug/
 /app/data/*
 /data/*
 .DS_Store
+/cache/*
