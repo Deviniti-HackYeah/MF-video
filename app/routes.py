@@ -145,19 +145,29 @@ def target_check():
 @app.route("/get_results", methods=["GET"])
 @cross_origin()
 def get_results():
-    form = request.form
-    req = request.get_json()
-    user_id = req.get('user_id', '')
-    session = req.get('session', '')
+    user_id = request.args.get('user_id')
+    session = request.args.get('session')
     folder_path = os.path.join(data_dir, str(user_id), str(session))
     jsons_in_folder = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+    if "full_results.json" in jsons_in_folder:
+        result = read_from_file_with_lock(os.path.join(folder_path, "full_results.json"))
+        return jsonify(result, 200)
     if len(jsons_in_folder) < 15:
         return jsonify({
-            "status": "Pending",
-            "message": "Results are not ready yet"
+            "processing": True,
         }, 201)
     result = manage_results(data_dir, user_id, session)
+    result["processing"] = False
+    write_to_file_with_lock(os.path.join(folder_path, "full_results.json"), result)
     return jsonify(result, 200)
+
+@app.route("/get_user_results", methods=["GET"])
+@cross_origin()
+def get_user_results():
+    user_id = request.args.get('user_id')
+    user_path = os.path.join(data_dir, str(user_id))
+    sessions_folders = os.listdir(user_path)
+    return jsonify([{"label": idx, "id": session_folder} for idx, session_folder in enumerate(sessions_folders)], 200)
 
 @app.route("/get_pauses_results", methods=["GET"])
 @cross_origin()
