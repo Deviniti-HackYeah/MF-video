@@ -50,3 +50,10 @@ class PostgresManager:
         self.db.session.commit()
         return {"message": "file created", "data": file.to_dict()}, 200
     
+    def read_all_users(self):
+        """
+        Read all users from the database.
+        """
+        users = User.query.all()
+        return {"message": "users found", "data": [user.to_dict() for user in users]}, 200
+    
