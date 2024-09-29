@@ -16,3 +16,4 @@ whisper-timestamped
 pydub
 flask_cors
 librosa
+openai

@@ -4,6 +4,9 @@ from openai import AzureOpenAI
 import whisper_timestamped as whisper
 from pydub import AudioSegment
 import numpy as np
+from app.utils.text_analyzer import TextAnalyzer
+import os
+from openai import AzureOpenAI
 from text_analyzer import TextAnalyzer
 from dotenv import load_dotenv
 
@@ -110,6 +113,9 @@ class TranscriptVideo:
                 return output
             except Exception as e:
                 print(f"Error: {e}")
+            except Exception as e:
+                self.logger.error(" *** Error: ", str(e))
+                print("Error: ", str(e))
                 return ""
         # return jsonify({"status": "OK", "message": "Video is now processing. You can check if result is ready using ready_suffix"})
         
@@ -325,12 +331,11 @@ class TranscriptVideo:
         return stats
     
     
-tv = TranscriptVideo()
-fp = "/Users/pkiszczak/Downloads/wetransfer_hackyeah-2024-breakwordtraps_2024-09-28_0449/HY_2024_film_08.mp4"
-tv.convert_to_mp3(file_path=fp,
-                    output_name=f"{fp.split("/")[-1].split(".")[0]}.mp3")
-output = tv.transcript_video("123", "321", "TEST", "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/HY_2024_film_08.mp3")
-word_dict = tv.word_dict(output)
-word_dict = tv.find_pauses(word_dict)
-full_text = tv.get_full_text(output)
-tv.text_stats(word_dict)
+# tv = TranscriptVideo()
+# fp = "/Users/pkiszczak/Downloads/wetransfer_hackyeah-2024-breakwordtraps_2024-09-28_0449/HY_2024_film_08.mp4"
+# tv.convert_to_mp3(file_path=fp,
+#                     output_name=f"{fp.split("/")[-1].split(".")[0]}.mp3")
+# output = tv.transcript_video("123", "321", "TEST", "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/HY_2024_film_08.mp3")
+# word_dict = tv.word_dict(output)
+# full_text = tv.get_full_text(output)
+# tv.text_stats(word_dict)
