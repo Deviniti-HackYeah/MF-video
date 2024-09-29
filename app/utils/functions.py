@@ -148,5 +148,44 @@ def manage_results(data_dir, user_id, session):
             full_result['audio'] = data
         elif json_file == "visual_anomalies.json":
             data = read_from_file_with_lock(os.path.join(result_folder, json_file))
+            if not "videoExample" in data:
+                data['videoExample'] = "--"
             full_result['video'] = data
+        elif json_file == "presenter_check.json":
+            data = read_from_file_with_lock(os.path.join(result_folder, json_file))
+            if not "videoExample" in data:
+                data['videoExample'] = "--"
+            full_result['video'] = data
+    
+    transcription_results = full_result.get('transcription', [])
+    sum_transcription_score = 0
+    for element in transcription_results:
+        element_score = element.get('score', 0)
+        sum_transcription_score += element_score
+
+    video_results = full_result.get('video', [])
+    sum_video_score = 0
+    for element in video_results:
+        element_score = element.get('score', 0)
+        sum_video_score += element_score
+    
+    audio_results = full_result.get('audio', [])
+    sum_audio_score = 0
+    for element in audio_results:
+        element_score = element.get('score', 0)
+        sum_audio_score += element_score
+
+    transcription_score = sum_transcription_score / len(transcription_results) if len(transcription_results) > 0 else 0
+    video_score = sum_video_score / len(video_results) if len(video_results) > 0 else 0
+    audio_score = sum_audio_score / len(audio_results) if len(audio_results) > 0 else 0
+
+    summary_score = (sum_transcription_score + sum_video_score + sum_audio_score) / (len(transcription_results) + len(video_results) + len(audio_results))
+
+    full_result['results'] = {
+        "transcription": transcription_score,
+        "yourScore": summary_score,
+        "video": video_score,
+        "audio": audio_score
+    }
+    
     return full_result
