@@ -221,11 +221,56 @@ class VideoAnalyzer:
                 return {}
         else: 
             return {}
+        
+        
+    def ocr(self, image_dir, full_text, fps):
+        images = os.listdir(image_dir)
+        images = sorted([img for img in images if img.endswith(".jpg")])
+        
+        prompt = """
+            You are an expert in optical character recognition from the screenshots and movies. Today, your task is to
+            read and return the subtitles from the provided images. You only should look at the subtitles that are present
+            on the bottom part of the screen, at the middle. Return them in JSON object format with keys: subtitles.
+            Contains of each and every key DO NEED TO BE TRANSLATED TO POLISH.
+            """
+        
+        subtitles = []
+        
+        for idx, image in enumerate(images):
+            print(f"{idx} / {len(images)}")
+            img_path = os.path.join(image_dir, image)
+            base64_img = va.img_to_base64(img_path)
+            
+            response = json.loads(va.analyze_image(prompt, base64_img))
+            frame_no = image.split("_")[-1].split(".")[0].replace("frame", "")
+            response['frame_no'] = frame_no
+            
+            print(response)
+            subtitles.append(response)
+            
+        def sort_by_frame_no(d):
+            return d['frame_no']
+        
+        subtitles = sorted(subtitles, key=sort_by_frame_no)
+        
+        merged_text = []
+        
+        for idx, sub in enumerate(subtitles):
+            current = sub['subtitles']
+            
+            if idx == 0:
+                merged_text.append(current)
+            else:
+                 if current.strip().lower() != merged_text[-1].strip().lower():
+                     merged_text.append(current)
+                     
+        return " ".join(merged_text)
+                     
 
         
 va = VideoAnalyzer("cache")
 video_path = "/Users/pkiszczak/projects/deviniti/MF-video/HY_2024_film_11.mp4"
-fps = va.extract_frames_from_video(video_path, "data", 9.77) # first, earliest timestamp from word_dict
+fps = va.extract_frames_from_video(video_path, "data", 9.77, 4) # first, earliest timestamp from word_dict
 
 img_path = "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/data/HY_2024_film_11_frame544.jpg"
 data_dir = "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/data"
@@ -233,4 +278,6 @@ files = os.listdir(data_dir)
 
 # anomalies = va.anomaly_check(data_dir, fps)
 full_text = "Żabki są zielone, krowy są łaciate. Ja cię lubię niczym herbatę."
-checks = va.presenter_check(data_dir, full_text) # full text from transcribing
+# checks = va.presenter_check(data_dir, full_text) # full text from transcribing
+
+ocr_data = va.ocr(data_dir, full_text, fps)
