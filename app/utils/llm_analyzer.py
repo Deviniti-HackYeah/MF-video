@@ -212,7 +212,53 @@ class LLMAnalyzer:
             
         return ok, result, error
     
+    def send_to_chat_gpt(self, model, task, text, max_tokens, temperature=0.00001, top_p=1, frequency_penalty=0, presence_penalty=0):
+        
+        client = self._get_client('gpt-4o')
+        
+        params = model + task + text + str(temperature) + str(max_tokens) + str(top_p) + str(frequency_penalty) + str(presence_penalty)
+        file_name = hashlib.md5(params.encode()).hexdigest() + "_chat_gpt.txt"
+        file_path = os.path.join(self.cache_dir, file_name)
+        ok = False
+        error = ""
+        result = ""
+        
+        if os.path.isfile(file_path):
+            ok, result, error = self._load_from_cache(file_path)
+            if ok:
+                return ok, result, error
+            
+        try:
+            print(" * chatGPT answer from API")
+            print(f" * model: {self.model}")
+            chat_completion = client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": task},
+                    {"role": "user", "content": text},
+                ],
+                temperature = temperature,
+                max_tokens = max_tokens,    
+                top_p = top_p,
+                frequency_penalty = frequency_penalty,
+                presence_penalty = presence_penalty,
+                response_format= {"type": "json_object"},
+            )
+            choice_object = chat_completion.choices[0]
+            result = choice_object.message.content
+            ok = True
+            self._write_to_cache(file_path, result)
+            
+        except Exception as e:
+            print(e)
+            error = str(e)
+            
+        return ok, result, error
+    
     
 # llm = LLMAnalyzer('cache')
-# output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania", "Kim jesteś i ile masz lat?", max_tokens=100)
+# output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania. Odpowiedz w formacie obiektu JSON z kluczami: powitanie, moje_imie", "Kim jesteś i ile masz lat?", max_tokens=100)
 # print(output)
+llm = LLMAnalyzer("cache")
+output = llm.send_to_chat_gpt(model="gpt-4o", task="Jesteś pomocnym asystentem. Odpowiedz w formacie obiektu json z kluczami: witam, data", text="Jaki jest dzisiaj dzień?", max_tokens=1000)
+print(output)

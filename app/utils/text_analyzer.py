@@ -36,6 +36,9 @@ class TextAnalyzer:
         :return: The function `readibility` is returning a tuple containing three float values:
         `reading_ease`, `grade`, and `dale_chall`.
         """
+        
+        print(f"Text for analysis: {text}")
+        
         reading_ease = textstat.flesch_reading_ease(text)
         grade = textstat.flesch_kincaid_grade(text)    
         dale_chall = textstat.dale_chall_readability_score(text)

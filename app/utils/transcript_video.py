@@ -1,26 +1,18 @@
+import os
 from flask import jsonify
+from openai import AzureOpenAI
 import whisper_timestamped as whisper
 from pydub import AudioSegment
 import numpy as np
 from text_analyzer import TextAnalyzer
+from dotenv import load_dotenv
+
+load_dotenv()
 # from app import whisper_model
 
 class TranscriptVideo:
     def __init__(self):
-    
-        if os.environ.get("WHISPER_API_KEY"):
-            client = AzureOpenAI(
-                api_key=os.environ.get('WHISPER_API_KEY'),
-                api_version="2023-09-01-preview",
-                azure_endpoint=os.environ.get('WHISPER_API_URL'),
-            )
-
-            model = "whisper"
-            print(" * Transcribing (openai_api/azure) audio file")
-            
-        else:
-            pass
-            
+        pass
 
     def __str__(self):
         return "Transcript Video using Whisper"
@@ -85,7 +77,7 @@ class TranscriptVideo:
         print(f"Transcripting video for customer {customer_id} and session {session} using {action}")
         
         if not os.environ.get("WHISPER_API_KEY"):
-            whisper_model = whisper.load_model('large')
+            whisper_model = whisper.load_model('small')
         
             result = whisper.transcribe(whisper_model, 
                                         file_path, 
@@ -95,26 +87,29 @@ class TranscriptVideo:
                                         temperature=(0.0, 0.2, 0.4, 0.6, 0.8, 1.0), 
                                         detect_disfluencies=True)
             
-            
-            
             print(f"Transcpition result: {result["text"]}")
             print(f"Result: {result}")
             output = {
                 "result": result
             }
-            
             return output     
         
         else:
+            if os.environ.get("WHISPER_API_KEY"):
+                client = AzureOpenAI(
+                api_key=os.environ.get('WHISPER_API_KEY'),
+                api_version="2024-08-01-preview",
+                azure_endpoint=os.environ.get('WHISPER_API_URL'),
+            )
+                model = "whisper"
+                
             try:
                 audio_file= open(file_path, "rb")
-                self.logger.info(" *** Transcribing audio file" + " (" + str(self.customer_id) + " " + str(self.session) + ")")
-                print(" * Transcribing audio file" + " (" + str(self.customer_id) + " " + str(self.session) + ")")
-                output = client.audio.transcriptions.create(model = model, file=audio_file , response_format = "srt")
+                print(f"Transcribing audio file: {file_path.split("/")[-1]}")
+                output = client.audio.transcriptions.create(model=model, file=audio_file, response_format="verbose_json", timestamp_granularities=["word", "segment"])
                 return output
-         except Exception as e:
-                self.logger.error(" *** Error: ", str(e))
-                print("Error: ", str(e))
+            except Exception as e:
+                print(f"Error: {e}")
                 return ""
         # return jsonify({"status": "OK", "message": "Video is now processing. You can check if result is ready using ready_suffix"})
         
@@ -134,38 +129,41 @@ class TranscriptVideo:
         it is represented as "[*]" in the text field of the dictionary.
         """
         
-        print(f"Transcription text: {transcription_output['result']['text']}")        
-        segments = transcription_output['result']['segments']
+        print(f"Transcription output: {transcription_output}")
+        # print(f"Transcription text: {transcription_output['result']['text']}")        
+        # segments = transcription_output['result']['segments']
         
-        words = segments[0]['words']        
+        # words = segments[0]['words']        
         word_dict = []
         
-        for word in words:
+        for word in transcription_output.words:
             temp = {}
-            w = word['text']
-            start = word['start']
-            end = word['end']
+            w = word.word
+            start = word.start
+            end = word.end
             length = end - start
-            if "*" in w:
-                print(f"Text: PAUSE | Start: {start} | End: {end} | Length: {length:.2f}s | ")
-                temp = {
-                    "text": "[*]",
-                    "start": start,
-                    "end": end,
-                    "length": length
-                }                
-                word_dict.append(temp)
-            else:
-                print(f"Text: {w} | Start: {start} | End: {end} | Length: {length:.2f}s | ")
-                temp = {
-                    "text": w,
-                    "start": start,
-                    "end": end,
-                    "length": length
-                }                
-                word_dict.append(temp)
-                
+            print(f"Text: {w} | Start: {start} | End: {end} | Length: {length:.2f}s")
+            temp = {
+                "text": w,
+                "start": start,
+                "end": end,
+                "length": length
+            }                
+            word_dict.append(temp)
+           
         return word_dict
+    
+    
+    def find_pauses(self, word_dict):
+        word_dict_w_pauses = []
+        
+        for idx, word in enumerate(word_dict):
+            if word['end'] != word_dict[idx+1]['start']:
+                print('diff')
+            else:
+                print('no diff')
+            
+            
                 
                 
     def get_full_text(self, transcription_output: dict) -> str:
@@ -182,7 +180,7 @@ class TranscriptVideo:
         dictionary within the `transcription_output` dictionary as a string.
         """
         
-        return transcription_output['result']['text']
+        return transcription_output.text
     
     
     def total_talking_time(self, word_dict: list[dict]) -> float:
@@ -333,5 +331,6 @@ tv.convert_to_mp3(file_path=fp,
                     output_name=f"{fp.split("/")[-1].split(".")[0]}.mp3")
 output = tv.transcript_video("123", "321", "TEST", "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/HY_2024_film_08.mp3")
 word_dict = tv.word_dict(output)
+word_dict = tv.find_pauses(word_dict)
 full_text = tv.get_full_text(output)
 tv.text_stats(word_dict)
