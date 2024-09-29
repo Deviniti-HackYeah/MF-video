@@ -211,12 +211,6 @@ class LLMAnalyzer:
             
         return ok, result, error
     
-    
-<<<<<<< Updated upstream
-# llm = LLMAnalyzer('cache')
-# output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania", "Kim jesteś i ile masz lat?", max_tokens=100)
-# print(output)
-=======
     def structurize_with_gpt(self, bielik_data):
         
         print("Structurizing with GPT")
@@ -232,39 +226,3 @@ class LLMAnalyzer:
         output = self.send_to_chat_gpt(model, task, bielik_data, max_tokens)
         
         return output
-
-        
-    
-llm = LLMAnalyzer('cache')
-# output = llm.send_to_chat("bielik", "Jesteś pomocnym asystentem, który ładnie odpowiada na pytania. Odpowiedz w formacie obiektu JSON z kluczami: powitanie, moje_imie", "Kim jesteś i ile masz lat?", max_tokens=100)
-# print(output)
-
-bielik_data= """
-Podsumowanie:
-
-Oprocentowanie obligacji zostało obniżone, co oznacza niższe zyski dla inwestorów. Jednocześnie preferencje rynku detalicznego (dla indywidualnych inwestorów) zostały utrzymane względem rynku hurtowego (dla inwestorów instytucjonalnych). Kluczowe przekazy:
-
-1. Obniżka oprocentowania obligacji.
-2. Zachowanie preferencji dla rynku detalicznego.
-3. Utrzymanie różnicy w traktowaniu rynku detalicznego i hurtowego.
- * Using Bielik via vLLM w/ OpenAI API
- * chatGPT answer from API
- * model: t3000
- * chatGPT answer saved to cache
-Wstęp:
-Wstęp nie jest wyraźnie zaznaczony w podanym tekście. Tekst zaczyna się od stwierdzenia faktu, co może być uznane za wprowadzenie do tematu, ale brakuje wyraźnego przedstawienia kontekstu lub celu wypowiedzi.
-
-Rozwinięcie:
-Rozwinięcie zawiera kluczowe informacje dotyczące obniżenia oprocentowania obligacji oraz preferencji dla rynku detalicznego względem rynku hurtowego. Tekst jest krótki i skupia się na przedstawieniu dwóch głównych punktów:
-1. Obniżenie oprocentowania obligacji
-2. Preferencje dla rynku detalicznego
-
-Rozwinięcie jest spójne, ale brakuje szczegółów, które mogłyby rozbudować temat. Nie ma wyjaśnienia przyczyn obniżenia oprocentowania ani konkretnych korzyści dla rynku detalicznego.
-
-Zakończenie:
-Zakończenie nie jest wyraźnie zaznaczone. Tekst kończy się na przedstawieniu dwóch punktów bez podsumowania czy wyciągnięcia wniosków.
-
-Podsumowując, tekst ma prostą strukturę, składającą się głównie z wprowadzenia i rozwinięcia. Brakuje wyraźnego wstępu, rozbudowanego rozwinięcia oraz zakończenia. Tekst jest spójny, ale krótki i nie zawiera głębszej analizy ani wniosków."""
-out=llm.structurize_with_gpt(bielik_data)
-print(f"Output:{out[1]}")
->>>>>>> Stashed changes
