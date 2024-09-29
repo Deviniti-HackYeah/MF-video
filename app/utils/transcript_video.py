@@ -4,18 +4,32 @@ from openai import AzureOpenAI
 import whisper_timestamped as whisper
 from pydub import AudioSegment
 import numpy as np
-from app.utils.text_analyzer import TextAnalyzer
 import os
 from openai import AzureOpenAI
-from text_analyzer import TextAnalyzer
+import json
+
+from app.utils.text_analyzer import TextAnalyzer
+
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 # from app import whisper_model
 
 class TranscriptVideo:
     def __init__(self):
-        pass
+    
+        if os.environ.get("WHISPER_API_KEY"):
+            self.client = AzureOpenAI(
+                api_key=os.environ.get('WHISPER_API_KEY'),
+                api_version="2023-09-01-preview",
+                azure_endpoint=os.environ.get('WHISPER_API_URL'),
+            )
+
+            self.model = "whisper"
+            print(" * Transcribing (openai_api/azure) audio file")
+            
+        else:
+            pass
 
     def __str__(self):
         return "Transcript Video using Whisper"
@@ -49,7 +63,7 @@ class TranscriptVideo:
             print("Conversion failed")
             return False
     
-    def transcript_video(self, customer_id: str, session: str, action: str, file_path: str) -> dict:
+    def transcript_audio(self, data_dir, user_id, session) -> dict:
         """
         The function `transcript_video` transcribes a video for a customer and session using a specified
         action and returns the transcription result.
@@ -77,11 +91,15 @@ class TranscriptVideo:
         the key "result".
         """
         
-        print(f"Transcripting video for customer {customer_id} and session {session} using {action}")
-        
+        print(f"Transcripting video for customer {user_id} and session {session}")
+        folder_path = os.path.join(data_dir, str(user_id), str(session))
+        folder_files_list = os.listdir(folder_path)
+        mp3_file_name = [f for f in folder_files_list if f.endswith(".mp3")][0]
+        file_path = os.path.join(folder_path, mp3_file_name)
+        print(f"File path: {file_path}")
         if not os.environ.get("WHISPER_API_KEY"):
-            whisper_model = whisper.load_model('small')
-        
+            whisper_model = whisper.load_model('large')
+            
             result = whisper.transcribe(whisper_model, 
                                         file_path, 
                                         fp16=False, 
@@ -95,26 +113,24 @@ class TranscriptVideo:
             output = {
                 "result": result
             }
-            return output     
+            
+            # return output         
         
         else:
-            if os.environ.get("WHISPER_API_KEY"):
-                client = AzureOpenAI(
-                api_key=os.environ.get('WHISPER_API_KEY'),
-                api_version="2024-08-01-preview",
-                azure_endpoint=os.environ.get('WHISPER_API_URL'),
-            )
-                model = "whisper"
+            # if os.environ.get("WHISPER_API_KEY"):
+            #     client = AzureOpenAI(
+            #     api_key=os.environ.get('WHISPER_API_KEY'),
+            #     api_version="2024-08-01-preview",
+            #     azure_endpoint=os.environ.get('WHISPER_API_URL'),
+            # )
+            #     model = "whisper"
                 
             try:
                 audio_file= open(file_path, "rb")
-                print(f"Transcribing audio file: {file_path.split("/")[-1]}")
-                output = client.audio.transcriptions.create(model=model, file=audio_file, response_format="verbose_json", timestamp_granularities=["word", "segment"])
+                print(f"Transcribing audio file: {file_path}")
+                output = self.client.audio.transcriptions.create(model=self.model, file=audio_file, response_format="verbose_json", timestamp_granularities=["word", "segment"])
                 return output
             except Exception as e:
-                print(f"Error: {e}")
-            except Exception as e:
-                self.logger.error(" *** Error: ", str(e))
                 print("Error: ", str(e))
                 return ""
         # return jsonify({"status": "OK", "message": "Video is now processing. You can check if result is ready using ready_suffix"})
@@ -157,20 +173,7 @@ class TranscriptVideo:
             }                
             word_dict.append(temp)
            
-        return word_dict
-    
-    
-    def find_pauses(self, word_dict):
-        word_dict_w_pauses = []
-        
-        for idx, word in enumerate(word_dict):
-            if word['end'] != word_dict[idx+1]['start']:
-                print('diff')
-            else:
-                print('no diff')
-            
-            
-                
+        return word_dict        
                 
     def get_full_text(self, transcription_output: dict) -> str:
         """
@@ -330,12 +333,23 @@ class TranscriptVideo:
         print(stats)
         return stats
     
-    
-# tv = TranscriptVideo()
-# fp = "/Users/pkiszczak/Downloads/wetransfer_hackyeah-2024-breakwordtraps_2024-09-28_0449/HY_2024_film_08.mp4"
-# tv.convert_to_mp3(file_path=fp,
-#                     output_name=f"{fp.split("/")[-1].split(".")[0]}.mp3")
-# output = tv.transcript_video("123", "321", "TEST", "/Users/pkiszczak/projects/deviniti/MF-video/app/utils/HY_2024_film_08.mp3")
-# word_dict = tv.word_dict(output)
-# full_text = tv.get_full_text(output)
-# tv.text_stats(word_dict)
+    def save_transcription(self, data_dir: str, user_id: int, session: int, file_name: str) -> bool:
+        session_dir = os.path.join(data_dir, str(user_id), str(session))
+        file_path = os.path.join(data_dir, str(user_id), str(session), file_name)
+        output_name = file_path.replace(".mp4", ".mp3")
+        self.convert_to_mp3(file_path=file_path, output_name=output_name)
+        output = self.transcript_audio(data_dir, user_id, session) #data_dir, user_id, session
+        word_dict = self.word_dict(output)
+        full_text = self.get_full_text(output)
+        stats = self.text_stats(word_dict)
+        try:
+            with open(os.path.join(session_dir,"transcription_data.json"), 'w') as f:
+                json.dump({
+                    "word_dict": word_dict,
+                    "full_text": full_text,
+                    "stats": stats
+                }, f, ensure_ascii=False, indent=4)
+            return True
+        except Exception as e:
+            print(f"Error saving transcription: {e}")
+            return False

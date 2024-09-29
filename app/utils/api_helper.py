@@ -38,7 +38,7 @@ def post_video_action(request):
     file_size = os.path.getsize(os.path.join(data_dir, str(user_id), str(session), filename))
     _, _ = PostgresManager().create_file(name=filename, ftype="video", size=file_size, session=session, user_id=user_id, hash=generate_hash(filename)) #filename, "video", file_size, session, user_id, '')
     tv = TranscriptVideo()
-    thread = Thread(target=tv.transcript_video, args=(user_id, session, "transript_video"))
+    thread = Thread(target=tv.save_transcription, args=(data_dir, user_id, session, filename))
     thread.start()
     return {
                 "status": ok,
