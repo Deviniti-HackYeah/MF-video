@@ -147,15 +147,30 @@ def manage_results(data_dir, user_id, session):
             data['videoExample'] = "--"
             full_result['audio'] = data
         elif json_file == "visual_anomalies.json":
-            data = read_from_file_with_lock(os.path.join(result_folder, json_file))
-            if not "videoExample" in data:
-                data['videoExample'] = "--"
-            full_result['video'] = data
+            try:
+                data = read_from_file_with_lock(os.path.join(result_folder, json_file))
+                if not "videoExample" in data:
+                    data['videoExample'] = "--"
+                full_result['video'] = data
+            except:
+                pass
         elif json_file == "presenter_check.json":
-            data = read_from_file_with_lock(os.path.join(result_folder, json_file))
-            if not "videoExample" in data:
-                data['videoExample'] = "--"
-            full_result['video'] = data
+            try:
+                data = read_from_file_with_lock(os.path.join(result_folder, json_file))
+                if not "videoExample" in data:
+                    data['videoExample'] = "--"
+                full_result['video'] = data
+            except:
+                pass
+        elif json_file == "compare_transciption.json":
+            try:
+                data = read_from_file_with_lock(os.path.join(result_folder, json_file))
+                if not "videoExample" in data:
+                    data['videoExample'] = "--"
+                full_result['video'] = data
+            except:
+                pass
+
     
     transcription_results = full_result.get('transcription', [])
     sum_transcription_score = 0
