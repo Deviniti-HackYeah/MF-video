@@ -182,7 +182,7 @@ class VideoAnalyzer:
         
         prompt = """
             You are an expert in video analysis, Shown image is a single picture from a video of a recorded presentation. 
-            Your task is to analyze what you can see on the picture and asses all important things that describe the presenter:
+            Your task is to analyze what you can see on the picture and assess all important things that describe the presenter:
             clothing, mimics, body languagea and posture. All those information shall be formatted into a JSON object and provided with keys:
             clothing, mimics, body_language, posture.
             Contains of each and every key DO NEED TO BE TRANSLATED TO POLISH.
