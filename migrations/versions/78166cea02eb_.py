@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 4080ee2c13b4
+Revision ID: 78166cea02eb
 Revises: 
-Create Date: 2024-09-28 17:31:01.795278
+Create Date: 2024-09-29 01:31:59.087165
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4080ee2c13b4'
+revision = '78166cea02eb'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,18 +23,21 @@ def upgrade():
     sa.Column('username', sa.String(length=100), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('surname', sa.String(length=100), nullable=False),
-    sa.Column('email', sa.String(length=100), nullable=True),
+    sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('password', sa.String(length=100), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('username')
     )
     op.create_table('file',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=True),
+    sa.Column('name', sa.String(length=100), nullable=False),
     sa.Column('hash', sa.String(length=100), nullable=True),
     sa.Column('ftype', sa.String(length=100), nullable=True),
-    sa.Column('progress', sa.Numeric(scale=1), nullable=True),
+    sa.Column('size', sa.Integer(), nullable=False),
+    sa.Column('progress', sa.Float(), nullable=True),
+    sa.Column('session', sa.String(length=100), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('processed', sa.Boolean(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),

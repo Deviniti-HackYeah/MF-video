@@ -28,3 +28,13 @@ def load_user(user_id):
 
 from .routes import app as app_blueprint
 app.register_blueprint(app_blueprint, url_prefix='/api')
+
+app.config['MAIL_SERVER']=os.getenv("MAIL_SERVER", "")
+app.config['MAIL_PORT'] = os.getenv("MAIL_PORT", 465)
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME", "")
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD", "")
+app.config['MAIL_USE_TLS'] = os.getenv("MAIL_USE_TLS", False)
+app.config['MAIL_USE_SSL'] = os.getenv("MAIL_USE_SSL", False)
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv("MAIL_SENDER", "")
+
+print(f" CONFIG: {app.config}")

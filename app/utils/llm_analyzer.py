@@ -212,17 +212,39 @@ class LLMAnalyzer:
             
         return ok, result, error
     
-    def structurize_with_gpt(self, bielik_data):
+    def structurize_with_gpt(self, bielik_data, **kwargs):
         
         print("Structurizing with GPT")
-        
+
         model = 'gpt-4o'
-        task = """
-            As an expert in creating JSON objects, restructurize received text to the format of a JSON object. 
-            Remember to retain the original text as it is, just restructurize it. 
-            Use only keys: reccomendations (overall reccomendations in the text received), comment, score(just a single float number in scale from 0 to 10), area (area of the analysis).
-            ALWAYS ANSWER IN POLISH.
-        """
+         
+        if "pause" in kwargs:
+            task = f"""
+                As an expert in creating JSON objects, restructurize received text to the format of a JSON object. 
+                Remember to retain the original text as it is, just restructurize it. 
+                Use only keys: pause (list of dictionaries with keys pause_start (time in seconds), pause_end (timein_seconds), pause_duration (time in seconds) (list only the significant pauses)), recommendations (as one string), comment (about only significant pauses), score(just a single float number in scale from 0 to 10).
+                ALWAYS ANSWER IN POLISH. Original source of the text: {kwargs.get('text', '')}
+            """ # _start_index (time in seconds and index is numerator of next occurance), pause_end_index (time in seconds and index is numerator of next occurance), pause_duration_index (time in seconds and index is numerator of next occurance)
+        elif "prolongation" in kwargs:
+            task = f"""
+                As an expert in creating JSON objects, restructurize received text to the format of a JSON object. 
+                Remember to retain the original text as it is, just restructurize it. 
+                Use only keys: prolongation (list of dictionaries with keys prolongartion_start (time in seconds), prolongation_end (time in seconds), prolongation_duration (time in seconds))(list only the dragged ones), recommendations (as one string), comment, score(just a single float number in scale from 0 to 10).
+                ALWAYS ANSWER IN POLISH. Original source of the text: {kwargs.get('text', '')}
+            """
+        elif "false_words" in kwargs:
+            task = f"""
+                As an expert in creating JSON objects, restructurize received text to the format of a JSON object.
+                Remember to retain the original text as it is, just restructurize it.
+                Use only keys: falses (list of dictionaries with keys false_start_start (time in seconds) false_word), recommendations (as one string), comment, score (just a single float number in scale from 0 to 10 based on number of false words).
+                """
+        else:
+            task = """
+                As an expert in creating JSON objects, restructurize received text to the format of a JSON object. 
+                Remember to retain the original text as it is, just restructurize it. 
+                Use only keys: recommendations (overall recommendations in the text received), comment, score(just a single float number in scale from 0 to 10).
+                ALWAYS ANSWER IN POLISH.
+            """
         max_tokens = 3000
         output = self.send_to_chat_gpt(model, task, bielik_data, max_tokens)
         
@@ -270,4 +292,3 @@ class LLMAnalyzer:
             error = str(e)
             
         return ok, result, error
-

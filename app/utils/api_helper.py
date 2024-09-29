@@ -8,11 +8,14 @@ from pathlib import Path
 import os
 import json
 
+import smtplib
+from email.mime.text import MIMEText
+
 from app.utils.mail_service import send_email
 from app.utils.data_manager import DataManager
 from app.utils.transcript_video import TranscriptVideo
 from app.utils.postgres_manager import PostgresManager
-from app.utils.functions import generate_hash
+from app.utils.functions import generate_hash, read_from_file_with_lock
 
 load_dotenv(override=True)
 
@@ -38,7 +41,7 @@ def post_video_action(request):
     file_size = os.path.getsize(os.path.join(data_dir, str(user_id), str(session), filename))
     _, _ = PostgresManager().create_file(name=filename, ftype="video", size=file_size, session=session, user_id=user_id, hash=generate_hash(filename)) #filename, "video", file_size, session, user_id, '')
     tv = TranscriptVideo()
-    thread = Thread(target=tv.transcript_video, args=(user_id, session, "transript_video"))
+    thread = Thread(target=tv.save_transcription, args=(data_dir, user_id, session, filename))
     thread.start()
     return {
                 "status": ok,
@@ -71,48 +74,31 @@ def get_file_path(folder):
             return file_name
         return None
     
-def send(request_name, email, docx_file_path):
+def send(download_url, email):
     try:
         with app.app_context():
             send_email(template="mail_template.html",
-                    title="Notatka ze spotkania już jest gotowa",
-                    message=f"W załączniku znajduje się notatka ze spotkania: {request_name}",
-                    to_email=email,
-                    docx_file_path=docx_file_path)
+                    title="Raport z analizy wideo",
+                    message=f"Twoje podsumowanie materiału wideo jest już gotowe. Możesz je obejrzeć klikając w link poniżej {download_url}",
+                    to_email=email)
     except:
         return {
             "status": "ERROR",
             "message": f"Error with sending mail to {email}"
             }
     
-def send_mail_ok(request, params):
-    
-    req = request.get_json()
-    
-    mail = req.get('mail', '')
-    
+def send_mail_ok(params):
+        
+    email = params.get('email')
     user_id = params.get('user_id')
     session = params.get('session')
-    data_dir = os.environ.get('DATA_DIR')
-    request_file = os.path.join(data_dir, str(user_id), str(session), "data.json")
-    
-    with open(request_file, 'r', encoding='utf-8') as f:
-        request_json = json.load(f)
-        
-    request_name = request_json.get("name")
-    docx_file_path = get_file_path(os.path.join(data_dir, str(user_id), str(session)))
-    
-    if not docx_file_path:
-        return {
-            "status": "ERROR",
-            "message": f"Can not find result file for specific customer: {user_id} and session {session}!"
-        }
-    
-    if mail:
-        send(request_name, mail, docx_file_path)
+
+    if email:
+        download_url = f"{os.environ.get('VIEW_URL')}/{user_id}/{session}"
+        send(download_url, email)
         return {
             "status": "OK",
-            "message": f"Mail sent to {mail}"
+            "message": f"Mail sent to {email}"
         }
     else:
         return {
@@ -120,3 +106,16 @@ def send_mail_ok(request, params):
             "message": "No mail provided"
         }
         
+def send_gmail(subject, body, sender, recipients, password):
+    msg = MIMEText(body)
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = ", ".join(recipients)
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+        server.login(sender, password)
+        server.sendmail(sender, recipients, msg.as_string())
+    print("Mail sent")
+
+    
+

@@ -8,14 +8,16 @@ from flask import redirect, render_template, url_for
 from flask_cors import cross_origin
 
 from app.utils.api_helper import post_video_action, result_ready, get_file_path, send_mail_ok
-from app.utils.functions import generate_hash, check_hash
+from app.utils.functions import generate_hash, check_hash, write_to_file_with_lock, read_from_file_with_lock
 from app.utils.postgres_manager import PostgresManager
+from app.utils.text_results import TextResults
 
 from app.models import User
 
 app = Blueprint('app', __name__)
 
 data_dir = os.environ.get('DATA_DIR')
+cache_dir = os.environ.get('CACHE_DIR')
 
 
 @app.route("/", methods=["GET", "OPTIONS"])
@@ -43,10 +45,11 @@ def register():
 @app.route("/login", methods=['GET', 'POST'])
 @cross_origin()
 def login():
-    form = request.form
+    # form = request.form
+    req = request.get_json()
 
-    username = form.get('username', '')
-    password = form.get('password', '')
+    username = req.get('username', '')
+    password = req.get('password', '')
 
     pm = PostgresManager()
 
@@ -104,38 +107,81 @@ def post_video():
 def result_ready(customer_id, session):
     result_ready = result_ready(customer_id, session)
     return jsonify(result_ready)
-
-@app.route("/download/<customer_id>/<session>", methods=["GET"])
-@cross_origin()
-def get_result(customer_id, session):
-    if result_ready(customer_id, session):
-        folder_path = os.path.join(data_dir, str(customer_id), str(session))
-        return send_from_directory(directory=folder_path,
-                                   path=get_file_path(folder_path),
-                                   download_name="result.pdf",
-                                   as_attachment=True)
-    return jsonify({
-        "status": "ERROR",
-        "message": "Result is not ready! You can check if it is ready using ready_suffix",
-        "ready_suffix": f"/api/result_ready/{customer_id}/{session}"}), 403
     
-@app.route("/send_email/<customer_id>/<session>", methods=["POST"])
+@app.route("/send_email", methods=["POST"])
 @cross_origin()
-def send_mail(customer_id, session):
+def send_mail():
+    req = request.get_json()
+
     params = {
-        "customer_id": customer_id,
-        "session": session 
+        "email": req.get('email', ''),
+        "user_id": req.get('user_id', ''),
+        "session": req.get('session', '')
     }
-    resp = send_mail_ok(request, params)
+    resp = send_mail_ok(params)
     if resp.get("status") == "ERROR":
         return jsonify(resp), 424
     return jsonify(resp), 200
-    
-@app.route("/delete_reuslts/<customer_id>/<session>", methods=["GET"])
+
+@app.route("/target_check", methods=["GET"])
 @cross_origin()
-def delete_results(customer_id, session):
-    print(f"customer id: {customer_id}, session id: {session}")
-    deleted = delete_results(customer_id, session)
-    if deleted['status'] == "ERROR":
-        return jsonify(deleted), 420
-    return jsonify(deleted), 200
+def target_check():
+    form = request.form
+    req = request.get_json()
+    user_id = req.get('user_id', '')
+    session = req.get('session', '')
+    target_groups = req.get('target_groups', '')
+    target_education = req.get('target_education', '')
+    transcription_data = read_from_file_with_lock(os.path.join(data_dir, str(user_id), str(session), "transcription_data.json"))
+    full_text = transcription_data.get("full_text", "")
+    tr = TextResults(cache_dir, user_id, session, data_dir)
+    _ = tr.target_group_check(full_text, target_groups, target_education)
+    return jsonify({
+        "status": "OK",
+        "message": "Target group check done"
+    }, 200)
+
+@app.route("/get_results", methods=["GET"])
+@cross_origin()
+def get_transcriptions_results():
+    form = request.form
+    req = request.get_json()
+    user_id = req.get('user_id', '')
+    session = req.get('session', '')
+    folder_path = os.path.join(data_dir, str(user_id), str(session))
+    jsons_in_folder = [f for f in os.listdir(folder_path) if f.endswith(".json")]
+    if len(jsons_in_folder) < 15:
+        return jsonify({
+            "status": "Pending",
+            "message": "Results are not ready yet"
+        }, 201)
+    transcription_results = []
+    for json_file in jsons_in_folder:
+        if json_file == "pause_check.json" or json_file == "false_words.json":
+            continue
+        data = read_from_file_with_lock(os.path.join(folder_path, json_file))
+        transcription_results.append(data)
+
+    return jsonify({"transcriptions": transcription_results}, 200)
+
+@app.route("/get_pauses_results", methods=["GET"])
+@cross_origin()
+def get_pauses_results():
+    form = request.form
+    req = request.get_json()
+    user_id = req.get('user_id', '')
+    session = req.get('session', '')
+    folder_path = os.path.join(data_dir, str(user_id), str(session))
+    pause_check = read_from_file_with_lock(os.path.join(folder_path, "pause_check.json"))
+    return jsonify(pause_check, 200)
+
+@app.route("/get_false_words_results", methods=["GET"])
+@cross_origin()
+def get_false_words_results():
+    form = request.form
+    req = request.get_json()
+    user_id = req.get('user_id', '')
+    session = req.get('session', '')
+    folder_path = os.path.join(data_dir, str(user_id), str(session))
+    false_words = read_from_file_with_lock(os.path.join(folder_path, "false_words.json"))
+    return jsonify(false_words, 200)
