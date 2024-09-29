@@ -223,7 +223,7 @@ class VideoAnalyzer:
             return {}
         
         
-    def ocr(self, image_dir, full_text, fps):
+    def ocr(self, image_dir: str, fps: int):
         images = os.listdir(image_dir)
         images = sorted([img for img in images if img.endswith(".jpg")])
         
@@ -265,6 +265,25 @@ class VideoAnalyzer:
                      merged_text.append(current)
                      
         return " ".join(merged_text)
+    
+    
+    def compare_full_text(self, full_text, ocr_text):
+        prompt = """
+            Jako ekspert do spraw języka polskiego zawodowo zajmujesz się porównywaniem tekstów oraz oceną ich podobieństwa. Masz 
+            dzisiaj przed sobą dwa teskty: jesten pochodzi z narzędzia OCR, drugi jest traskrybcją z pliku audio. Twoim zadaniem jest porównać 
+            je pod kątem podobieństwa względem siebie, pod kątem treści, struktury wypowiedzi oraz użytego języka. Oceń także ich podobieństwo 
+            względem siebie w skali od 0 do 10, gdzie 10 to identyczne teksty, zaś 0 to teksty zupełnie odmienne.
+        """
+        
+        llm = LLMAnalyzer(self.cache_dir)
+        text = f"Tekst z OCR: {ocr_text}\nTekst z transkrypcji: {full_text}"
+        response = llm.send_to_chat('bielik', prompt, text, 2000)
+        
+        if response:
+            return response
+
+        else:
+            return {}
                      
 
         
@@ -280,4 +299,8 @@ files = os.listdir(data_dir)
 full_text = "Żabki są zielone, krowy są łaciate. Ja cię lubię niczym herbatę."
 # checks = va.presenter_check(data_dir, full_text) # full text from transcribing
 
-ocr_data = va.ocr(data_dir, full_text, fps)
+ocr_text = va.ocr(data_dir, fps)
+
+comparison = va.compare_full_text(full_text, ocr_text)
+print(comparison)
+
